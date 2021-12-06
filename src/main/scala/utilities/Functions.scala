@@ -1,7 +1,7 @@
 package utilities
 
-object Functions {
-  def invert_injection[K,V](inj: Map[K,V]): Unit = {
+import algebra.Z2Polynomial
 
-  }
+object Functions {
+ 
 }

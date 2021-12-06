@@ -14,7 +14,7 @@ class Z2PolynomialRing(val variables: Set[Object]) {
   }
 
   def apply(variable: Object): Z2Polynomial = {
-    if (this.variables.contains(variable)) {
+    if (variables.contains(variable)) {
       new Z2Monomial(this, Map(variable -> 1)).toPolynomial
     } else {
       throw new RuntimeException("no such variable exists")
@@ -26,20 +26,20 @@ class Z2PolynomialRingMap(val source: Z2PolynomialRing,
                           val target: Z2PolynomialRing,
                           val mapping: Map[Object, Object]) {
 
-  def inverse = new Z2PolynomialRingMap(this.target, this.source, this.mapping.map(_.swap))
+  def inverse = new Z2PolynomialRingMap(target, source, mapping.map(_.swap))
 
   def apply(x: Z2Monomial): Z2Monomial =
-    new Z2Monomial(this.target, x.powers.mapKeysAndMerge(k => this.mapping(k), _+_))
+    new Z2Monomial(target, x.powers.mapKeysAndMerge(k => mapping(k), _+_))
 
   def apply(x: Z2Polynomial): Z2Polynomial = {
-    if (x.ring != this.source) {
+    if (x.ring != source) {
       throw new RuntimeException("cannot apply map to an element of a different ring")
     } else {
-      x.terms.foldLeft(this.target.zero)((acc, term) => acc + this.apply(term).toPolynomial)
+      x.terms.foldLeft(target.zero)((acc, term) => acc + apply(term).toPolynomial)
     }
   }
 
-  def retract(y: Z2Polynomial) : Z2Polynomial = this.inverse.apply(y)
+  def retract(y: Z2Polynomial) : Z2Polynomial = inverse.apply(y)
 }
 
 object Z2PolynomialRingMap {
@@ -48,9 +48,9 @@ object Z2PolynomialRingMap {
 }
 
 class Z2Monomial(val ring: Z2PolynomialRing, val powers: Map[Object, Int]) {
-  def toPolynomial: Z2Polynomial = new Z2Polynomial(this.ring, Set(this))
+  def toPolynomial: Z2Polynomial = new Z2Polynomial(ring, Set(this))
 
-  def degree: Int = this.powers.foldLeft(0)(_+_._2)
+  def degree: Int = powers.foldLeft(0)(_+_._2)
 
   def *(other: Z2Monomial): Z2Monomial = {
     assert(this.ring == other.ring)
@@ -66,7 +66,7 @@ class Z2Monomial(val ring: Z2PolynomialRing, val powers: Map[Object, Int]) {
 
   override def toString: String = {
     var result = ""
-    for ((variable, power) <- this.powers) {
+    for ((variable, power) <- powers) {
       if (power == 1) {
         result += variable.toString + "."
       } else if (power > 1) {
@@ -79,28 +79,26 @@ class Z2Monomial(val ring: Z2PolynomialRing, val powers: Map[Object, Int]) {
 
 class Z2Polynomial(val ring: Z2PolynomialRing, val terms: Set[Z2Monomial]) {
   def degree: Int = {
-    if (this.terms.isEmpty) {
+    if (terms.isEmpty) {
       throw new RuntimeException("the zero polynomial has degree negative infinity")
     }
-    val d = this.terms.head.degree
-    if (!this.terms.tail.forall(_.degree == d)) {
+    val d = terms.head.degree
+    if (!terms.tail.forall(_.degree == d)) {
       throw new RuntimeException("non-homogeneous polynomial")
     }
     d
   }
 
   def +(other: Z2Polynomial): Z2Polynomial = {
-    assert(this.ring == other.ring)
+    assert (this.ring == other.ring)
     new Z2Polynomial(this.ring, (this.terms | other.terms) &~ (this.terms & other.terms))
   }
 
   def *(other: Z2Polynomial): Z2Polynomial = {
-    assert(this.ring == other.ring)
+    assert (this.ring == other.ring)
     var result = this.ring.zero
-    for (t1 <- this.terms) {
-      for (t2 <- other.terms) {
-        result += (t1 * t2).toPolynomial
-      }
+    for (t1 <- this.terms; t2 <- other.terms) {
+      result += (t1 * t2).toPolynomial
     }
     result
   }
@@ -112,7 +110,7 @@ class Z2Polynomial(val ring: Z2PolynomialRing, val terms: Set[Z2Monomial]) {
 
   override def hashCode: Int = Seq(terms).map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
 
-  override def toString: String = this.terms.mkString(" + ") match { case "" => "0" case s => s }
+  override def toString: String = terms.mkString(" + ") match { case "" => "0" case s => s }
 }
 
 object Z2Polynomial {
