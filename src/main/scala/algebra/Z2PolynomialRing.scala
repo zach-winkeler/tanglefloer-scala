@@ -1,6 +1,7 @@
 package algebra
 
 import scalaz.Scalaz._
+import scalaz.Semigroup
 import utilities.MapUtils.MapImprovements
 
 class Z2PolynomialRing(val variables: Set[Object]) {
@@ -61,10 +62,7 @@ class Z2Monomial(val ring: Z2PolynomialRing, val powers: Map[Object, Int]) {
     case _ => false
   }
 
-  override def hashCode: Int = {
-    val state = Seq(powers)
-    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
-  }
+  override def hashCode: Int = Seq(powers).map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
 
   override def toString: String = {
     var result = ""
@@ -114,5 +112,10 @@ class Z2Polynomial(val ring: Z2PolynomialRing, val terms: Set[Z2Monomial]) {
 
   override def hashCode: Int = Seq(terms).map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
 
-  override def toString: String = this.terms.mkString(" + ")
+  override def toString: String = this.terms.mkString(" + ") match { case "" => "0" case s => s }
+}
+
+object Z2Polynomial {
+  implicit val z2PolynomialSemigroup: Semigroup[Z2Polynomial] =
+    Semigroup.instance((a, b) => a + b)
 }
