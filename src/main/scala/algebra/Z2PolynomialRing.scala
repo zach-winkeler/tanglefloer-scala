@@ -4,9 +4,10 @@ import scalaz.Scalaz._
 import scalaz.Semigroup
 import utilities.MapUtils.MapImprovements
 
-class Z2PolynomialRing(val variables: Set[Object]) {
+class Z2PolynomialRing(val variables: IndexedSeq[Object]) {
   val zero: Z2Polynomial = new Z2Polynomial(this, Set())
   val one: Z2Polynomial = new Z2Monomial(this, Map()).toPolynomial
+  val vars: IndexedSeq[Z2Polynomial] = variables.map(this(_))
 
   override def equals(other: Any): Boolean = other match {
     case other: Z2PolynomialRing => this.variables == other.variables

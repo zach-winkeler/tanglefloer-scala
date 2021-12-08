@@ -8,7 +8,7 @@ object ETangleType extends Enumeration {
   val Straight, Cup, Cap, Over, Under = Value
 }
 
-class ETangle(val kind: ETangleType, val signs: Vector[Sign], val pos: Int) {
+class ETangle(val kind: ETangleType, val signs: IndexedSeq[Sign], val pos: Int) {
   assert (pos < signs.length)
   if (kind == Cup || kind == Cap) {
     assert (signs(pos-1) == -signs(pos))
@@ -24,7 +24,7 @@ class ETangle(val kind: ETangleType, val signs: Vector[Sign], val pos: Int) {
   override def hashCode(): Int = Seq(kind, signs, pos).map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
 }
 
-class Tangle(val pieces: Vector[ETangle]) {
+class Tangle(val pieces: IndexedSeq[ETangle]) {
   def height: Int = pieces.map(_.height).max
 
   def +(other: Tangle): Tangle = new Tangle(this.pieces ++ other.pieces)
