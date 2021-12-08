@@ -15,7 +15,7 @@ object StrandUtils {
 }
 
 class StrandDiagram(val module: StrandDiagramSpan,
-                    val blackStrands: Set[Strand],
+                    val blackStrands: Map[Float, Float],
                     val orangeStrands: IndexedSeq[Strand],
                     val orangeSigns: IndexedSeq[Sign],
                     val orangeVars: IndexedSeq[Z2Polynomial]) {
@@ -25,7 +25,7 @@ class StrandDiagram(val module: StrandDiagramSpan,
     var result = module.zero
     for (s1 <- blackStrands;
          s2 <- blackStrands if (s1._1 < s2._1) && (s1 crosses s2)) {
-      var coefficient: Z2Polynomial = module.ring.one
+      var coefficient = module.ring.one
       for ((o, i) <- orangeStrands.view.zipWithIndex if (o crosses s1) && (o crosses s2)) {
         if (orangeSigns(i) == Positive) {
           coefficient *= orangeVars(i)
@@ -38,9 +38,37 @@ class StrandDiagram(val module: StrandDiagramSpan,
     result
   }
 
+  def *(other: StrandDiagram): StrandDiagramSpanElement = {
+    var coefficient = module.ring.one
+    var newHalfStrands = Set.empty[(Strand, Strand)]
+    var newStrands = Map.empty[Float, Float]
+    for (s1 <- this.blackStrands) {
+      if (other.blackStrands contains s1._2) {
+        val s2 = (s1._2, other.blackStrands(s1._2))
+        for ((s3, s4) <- newHalfStrands) {
+          if ((s1 crosses s3) && (s2 crosses s4)) {
+            coefficient *= module.ring.zero
+          }
+        }
+        newHalfStrands = newHalfStrands.incl((s1, s2))
+        newStrands += s1._1 -> s2._2
+        for ((o, i) <- orangeStrands.view.zipWithIndex if (o crosses s1) && (o crosses s2)) {
+          if (orangeSigns(i) == Positive) {
+            coefficient *= orangeVars(i)
+          } else {
+            coefficient *= module.ring.zero
+          }
+        }
+      } else {
+        coefficient *= module.ring.zero
+      }
+    }
+    coefficient *: new StrandDiagram(module, newStrands, orangeStrands, orangeSigns, orangeVars).toElement
+  }
+
   def uncross(s1: Strand, s2: Strand): StrandDiagram = {
-    val newBlackStrands = blackStrands -- List(s1, s2) ++ List((s1._1, s2._2), (s2._1, s1._2))
-    new StrandDiagram(this.module, newBlackStrands, this.orangeStrands, this.orangeSigns, this.orangeVars)
+    val newBlackStrands = blackStrands ++ List(s1._1 -> s2._2, s2._1 -> s1._2)
+    new StrandDiagram(this.module, newBlackStrands, orangeStrands, orangeSigns, orangeVars)
   }
 
   def toElement: StrandDiagramSpanElement = new StrandDiagramSpanElement(module, Map(this -> module.ring.one))

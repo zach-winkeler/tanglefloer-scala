@@ -4,7 +4,7 @@ import algebra.Sign.Sign
 import scalaz.Scalaz._
 import tangles.{StrandDiagram, StrandDiagramSpan}
 import tangles.StrandUtils.Strand
-import utilities.IndexedSeqUtils.IndexedSeqImprovements
+import utilities.IndexedSeqUtils.IndexedSeqExtensions
 
 object Sign extends Enumeration {
   protected case class SignVal(sign: Int) extends super.Val {
@@ -27,11 +27,11 @@ class AMinus(val signs: IndexedSeq[Sign]) {
   val strandDiagramSpan: StrandDiagramSpan = new StrandDiagramSpan(ring)
   val orangeStrands: IndexedSeq[Strand] = signs.indices.map(y => (y + 0.5f, y + 0.5f))
 
-  def gen(strands: Set[Strand]): AMinusGenerator = new AMinusGenerator(this, strands)
-  def elt(strands: Set[Strand]): AMinusElement = gen(strands).toElement
+  def gen(strands: Map[Float, Float]): AMinusGenerator = new AMinusGenerator(this, strands)
+  def elt(strands: Map[Float, Float]): AMinusElement = gen(strands).toElement
 }
 
-class AMinusGenerator(val algebra: AMinus, val strands: Set[Strand]) {
+class AMinusGenerator(val algebra: AMinus, val strands: Map[Float, Float]) {
   def toElement: AMinusElement = new AMinusElement(algebra, Map(this -> algebra.ring.one))
 
   def toStrandDiagram: StrandDiagram = {
@@ -40,7 +40,8 @@ class AMinusGenerator(val algebra: AMinus, val strands: Set[Strand]) {
 
   def d: AMinusElement = this.toStrandDiagram.dPlus.toAMinusElement(algebra)
 
-//  def *(other: AMinusGenerator): AMinusElement = this.toStrandDiagram.dPlus.toAMinusElement(algebra)
+  def *(other: AMinusGenerator): AMinusElement =
+    (this.toStrandDiagram * other.toStrandDiagram).toAMinusElement(this.algebra)
 
   override def equals(other: Any): Boolean = other match {
     case other: AMinusGenerator => this.algebra == other.algebra && this.strands == other.strands
@@ -52,34 +53,41 @@ class AMinusGenerator(val algebra: AMinus, val strands: Set[Strand]) {
   override def toString: String = strands.toString
 }
 
-class AMinusElement(val algebra: AMinus, val terms: Map[AMinusGenerator, Z2Polynomial]) {
+class AMinusElement(val algebra: AMinus, _terms: Map[AMinusGenerator, Z2Polynomial]) {
+  val terms: Map[AMinusGenerator, Z2Polynomial] = _terms.filter(_._2 != algebra.ring.zero)
+
   def +(other: AMinusElement): AMinusElement = {
     assert (this.algebra == other.algebra)
     new AMinusElement(this.algebra, this.terms |+| other.terms)
   }
 
-    def d: AMinusElement = {
-      var result = this.algebra.zero
-      for ((g,c) <- this.terms) {
-        result += c *: g.d
-      }
-      result
+  def d: AMinusElement = {
+    var result = this.algebra.zero
+    for ((g,c) <- this.terms) {
+      result += c *: g.d
     }
+    result
+  }
 
-  //  def *(other: AMinusElement): AMinusElement = {
-  //    assert (this.algebra == other.algebra)
-  //    var result = this.algebra.zero
-  //    for ((g1, c1) <- this.terms; (g2, c2) <- other.terms) {
-  //      result += (c1 * c2) *: (g1 * g2)
-  //    }
-  //    result
-  //  }
+  def *(other: AMinusElement): AMinusElement = {
+    assert (this.algebra == other.algebra)
+    var result = this.algebra.zero
+    for ((g1, c1) <- this.terms; (g2, c2) <- other.terms) {
+      result += (c1 * c2) *: (g1 * g2)
+    }
+    result
+  }
 
   def *:(scalar: Z2Polynomial): AMinusElement =
     new AMinusElement(algebra, terms.view.mapValues(scalar * _).toMap)
 
+  def canEqual(other: Any): Boolean = other.isInstanceOf[AMinusElement]
+
   override def equals(other: Any): Boolean = other match {
-    case other: AMinusElement => this.algebra == other.algebra && this.terms == other.terms
+    case that: AMinusElement =>
+      (that canEqual this) &&
+        terms == that.terms &&
+        algebra == that.algebra
     case _ => false
   }
 

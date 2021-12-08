@@ -1,7 +1,7 @@
 package utilities
 
 object MapUtils {
-  implicit class MapImprovements[K1,V](m: Map[K1,V]) {
+  implicit class MapExtensions[K1,V](m: Map[K1,V]) {
     def mapKeysAndMerge[K2](f: K1 => K2, g: (V, V) => V): Map[K2,V] = {
       var result = Map.empty[K2,V]
       for ((k1, v) <- m) {

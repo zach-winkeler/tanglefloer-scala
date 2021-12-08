@@ -6,6 +6,7 @@ class Z2PolynomialRingTests extends AnyFunSuite {
   private val r = new Z2PolynomialRing(IndexedSeq("x", "y"))
   private val x = r("x")
   private val y = r("y")
+  private val z = new Z2Monomial(r, Map("x" -> 1, "y" -> 1)).toPolynomial
 
   private val s = new Z2PolynomialRing(IndexedSeq("u", "v", "w"))
   private val u = s("u")
@@ -24,7 +25,7 @@ class Z2PolynomialRingTests extends AnyFunSuite {
   }
 
   test("multiplication") {
-    assertResult(new Z2Monomial(r, Map("x" -> 1, "y" -> 1)).toPolynomial) {x * y}
+    assertResult(z) {x * y}
     assertResult(x * x + y * y) {(x + y) * (x + y)}
   }
 
@@ -36,5 +37,10 @@ class Z2PolynomialRingTests extends AnyFunSuite {
     assertResult(u) {f.apply(x)}
     assertResult(u * v) {f.apply(x * y)}
     assertResult(y * y) {g.apply(v * w)}
+  }
+
+  test("toString") {
+    assertResult("0") {r.zero.toString}
+    assertResult("1") {r.one.toString}
   }
 }

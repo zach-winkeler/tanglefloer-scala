@@ -2,7 +2,7 @@ package algebra
 
 import scalaz.Scalaz._
 import scalaz.Semigroup
-import utilities.MapUtils.MapImprovements
+import utilities.MapUtils.MapExtensions
 
 class Z2PolynomialRing(val variables: IndexedSeq[Object]) {
   val zero: Z2Polynomial = new Z2Polynomial(this, Set())
@@ -74,7 +74,11 @@ class Z2Monomial(val ring: Z2PolynomialRing, val powers: Map[Object, Int]) {
         result += variable.toString + "^" + power.toString + "."
       }
     }
-    result.dropRight(1)
+    if (result == "") {
+      "1"
+    } else {
+      result.dropRight(1)
+    }
   }
 }
 
