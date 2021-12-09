@@ -1,7 +1,7 @@
 package tangles
 
-import algebra.Sign.{Positive, Sign}
-import algebra.{AMinus, AMinusElement, AMinusGenerator, Z2Polynomial, Z2PolynomialRing}
+import algebras.Sign.{Positive, Sign}
+import algebras.{AMinus, Z2PolynomialRing}
 import scalaz.Scalaz._
 import scalaz.Semigroup
 import tangles.StrandUtils.{Strand, StrandImprovements}
@@ -18,8 +18,8 @@ class StrandDiagram(val module: StrandDiagramSpan,
                     val blackStrands: Map[Float, Float],
                     val orangeStrands: IndexedSeq[Strand],
                     val orangeSigns: IndexedSeq[Sign],
-                    val orangeVars: IndexedSeq[Z2Polynomial]) {
-  def toAMinusGenerator(algebra: AMinus): AMinusGenerator = new AMinusGenerator(algebra, blackStrands)
+                    val orangeVars: IndexedSeq[Z2PolynomialRing.Element]) {
+  def toAMinusGenerator(algebra: AMinus): AMinus.Generator = new AMinus.Generator(algebra, blackStrands)
 
   def dPlus: StrandDiagramSpanElement = {
     var result = module.zero
@@ -94,11 +94,11 @@ class StrandDiagram(val module: StrandDiagramSpan,
 
 class StrandDiagramSpan(val ring: Z2PolynomialRing) {
   val zero: StrandDiagramSpanElement =
-    new StrandDiagramSpanElement(this, Map.empty[StrandDiagram, Z2Polynomial])
+    new StrandDiagramSpanElement(this, Map.empty[StrandDiagram, Z2PolynomialRing.Element])
 }
 
-class StrandDiagramSpanElement(val module: StrandDiagramSpan, val terms: Map[StrandDiagram, Z2Polynomial]) {
-  def toAMinusElement(algebra: AMinus): AMinusElement = {
+class StrandDiagramSpanElement(val module: StrandDiagramSpan, val terms: Map[StrandDiagram, Z2PolynomialRing.Element]) {
+  def toAMinusElement(algebra: AMinus): AMinus.Element = {
     var result = algebra.zero
     for ((g, c) <- terms) {
       result += c *: g.toAMinusGenerator(algebra).toElement
@@ -111,7 +111,7 @@ class StrandDiagramSpanElement(val module: StrandDiagramSpan, val terms: Map[Str
     new StrandDiagramSpanElement(this.module, this.terms |+| other.terms)
   }
 
-  def *:(scalar: Z2Polynomial): StrandDiagramSpanElement =
+  def *:(scalar: Z2PolynomialRing.Element): StrandDiagramSpanElement =
     new StrandDiagramSpanElement(module, terms.view.mapValues(scalar * _).toMap)
 
   override def equals(other: Any): Boolean = other match {

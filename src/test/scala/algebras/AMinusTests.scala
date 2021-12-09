@@ -1,6 +1,6 @@
-package algebra
+package algebras
 
-import algebra.Sign.Positive
+import algebras.Sign.{Negative, Positive}
 import org.scalatest.funsuite.AnyFunSuite
 
 class AMinusTests extends AnyFunSuite {
@@ -14,6 +14,11 @@ class AMinusTests extends AnyFunSuite {
   private val c = A.elt(Map(1f -> 1f))
   private val d = A.elt(Map(1f -> 0f))
 
+  private val B = new AMinus(IndexedSeq(Negative))
+  private val S = B.ring
+  private val xB = B.elt(Map(0f -> 0f, 1f -> 1f))
+  private val yB = B.elt(Map(0f -> 1f, 1f -> 0f))
+
   test("differential") {
     assertResult(A.zero) {x.d}
     assertResult(u0 *: x) {y.d}
@@ -21,6 +26,9 @@ class AMinusTests extends AnyFunSuite {
 
     assertResult(A.zero) {a.d}
     assertResult(A.zero) {b.d + c.d + d.d}
+
+    assertResult(B.zero) {xB.d}
+    assertResult(B.zero) {yB.d}
   }
 
   test("multiplication") {
@@ -36,5 +44,8 @@ class AMinusTests extends AnyFunSuite {
     assertResult(u0 *: c) {d * b}
     assertResult(b) {a * b * c}
     assertResult(d) {c * d * a}
+
+    assertResult(xB) {xB * xB}
+    assertResult(B.zero) {yB * yB}
   }
 }
