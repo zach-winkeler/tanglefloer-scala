@@ -48,4 +48,8 @@ class AMinusTests extends AnyFunSuite {
     assertResult(xB) {xB * xB}
     assertResult(B.zero) {yB * yB}
   }
+
+  test("gens") {
+    assertResult(7) {A.gens.size}
+  }
 }

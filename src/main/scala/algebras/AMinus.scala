@@ -4,6 +4,7 @@ import algebras.Sign.Sign
 import scalaz.Scalaz._
 import tangles.{StrandDiagram, StrandDiagramSpan}
 import tangles.StrandUtils.Strand
+import utilities.Functions.partialBijections
 import utilities.IndexedSeqUtils.IndexedSeqExtensions
 
 object Sign extends Enumeration {
@@ -35,6 +36,12 @@ class AMinus(val signs: IndexedSeq[Sign]) {
   def idempotent(occupied: Iterable[Float]): Generator = gen(occupied.map(p => p -> p).toMap)
   def gen(strands: Map[Float, Float]): Generator = new AMinus.Generator(this, strands)
   def elt(strands: Map[Float, Float]): Element = gen(strands).toElement
+
+  def gens: Set[Generator] =
+    partialBijections(
+      (0 until signs.length+1).map(_.toFloat).toSet,
+      (0 until signs.length+1).map(_.toFloat).toSet
+    ).map(gen)
 }
 
 object AMinus {
@@ -61,7 +68,7 @@ object AMinus {
 
     override def hashCode: Int = Seq(strands).map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
 
-    override def toString: String = strands.toString
+    override def toString: String = strands.toString.substring(3)
   }
 
   class Element(val algebra: AMinus, _terms: Map[AMinus.Generator, Z2PolynomialRing.Element]) {

@@ -6,6 +6,7 @@ import scalaz.Semigroup
 class TensorAlgebra(val algebra: AMinus) {
   import TensorAlgebra._
   def zero: Element = new Element(this, Map.empty)
+  def oneGen: Generator = new Generator(this, IndexedSeq())
 }
 
 object TensorAlgebra {
@@ -40,7 +41,7 @@ object TensorAlgebra {
       }
     }
 
-    override def toString: String = factors.toString
+    override def toString: String = factors.toString.substring(6)
 
     def canEqual(other: Any): Boolean = other.isInstanceOf[Generator]
 
@@ -52,10 +53,7 @@ object TensorAlgebra {
       case _ => false
     }
 
-    override def hashCode(): Int = {
-      val state = Seq(factors)
-      state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
-    }
+    override def hashCode(): Int = Seq(factors).map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
   }
 
   object Generator {
@@ -63,6 +61,11 @@ object TensorAlgebra {
   }
 
   class Element(val tensorAlgebra: TensorAlgebra, val terms: Map[Generator, Z2PolynomialRing.Element]) {
+    def forceGen: Generator = {
+      assert(terms.tail.isEmpty && (terms.head._2 == tensorAlgebra.algebra.ring.one))
+      terms.head._1
+    }
+
     def +(other: Element): Element = new Element(this.tensorAlgebra, this.terms |+| other.terms)
 
     def *:(scalar: Z2PolynomialRing.Element): Element =
@@ -93,10 +96,7 @@ object TensorAlgebra {
       case _ => false
     }
 
-    override def hashCode(): Int = {
-      val state = Seq(terms)
-      state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
-    }
+    override def hashCode(): Int = Seq(terms).map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
   }
 
   object Element {

@@ -21,5 +21,6 @@ class TensorAlgebraTests extends AnyFunSuite {
   test("tensor product") {
     assertResult(TA.zero) {a.toTensorAlgebra(TA) :<*> d}
     assertResult(da) {d.toTensorAlgebra(TA) :<*> a}
+    assertResult(u0 *: (a <*>: a.toTensorAlgebra(TA))) {(b * d) <*>: a.toTensorAlgebra(TA).toElement}
   }
 }
