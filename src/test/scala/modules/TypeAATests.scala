@@ -1,7 +1,7 @@
 package modules
 
 import algebras.AMinus
-import algebras.Sign.Positive
+import algebras.Sign.{Negative, Positive}
 import modules.TypeAA.AMinusExtensions
 import org.scalatest.funsuite.AnyFunSuite
 import utilities.ModuleRenderer
@@ -12,6 +12,9 @@ class TypeAATests extends AnyFunSuite {
 
   test("type AA") {
     assertResult(7) {typeAA.graph.nodes.size}
-    println(ModuleRenderer.render(typeAA))
+  }
+
+  test("dot rendering") {
+    reflect.io.File("out/graph.dot").writeAll(ModuleRenderer.render(typeAA, false))
   }
 }

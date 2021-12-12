@@ -71,6 +71,9 @@ abstract class Module[M <: Module[M]](val ring: Z2PolynomialRing,
 trait ModuleCompanion[M <: Module[M]] {
   def getLeftGenerator(source: TensorGenerator[M], target: TensorGenerator[M]): TensorAlgebra.Generator
   def getRightGenerator(source: TensorGenerator[M], target: TensorGenerator[M]): TensorAlgebra.Generator
+  def isIdempotentAction(left: TensorAlgebra.Generator,
+                         coefficient: Z2PolynomialRing.Element,
+                         right: TensorAlgebra.Generator): Boolean
 }
 
 object Module {

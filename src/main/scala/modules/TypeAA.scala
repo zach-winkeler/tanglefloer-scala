@@ -26,9 +26,18 @@ class TypeAA(ring: Z2PolynomialRing,
 }
 
 object TypeAA extends ModuleCompanion[TypeAA] {
-  def getLeftGenerator(source: Module.TensorGenerator[TypeAA], target: Module.TensorGenerator[TypeAA]): TensorAlgebra.Generator = source.left
+  def getLeftGenerator(source: Module.TensorGenerator[TypeAA],
+                       target: Module.TensorGenerator[TypeAA]): TensorAlgebra.Generator = source.left
 
-  def getRightGenerator(source: Module.TensorGenerator[TypeAA], target: Module.TensorGenerator[TypeAA]): TensorAlgebra.Generator = source.right
+  def getRightGenerator(source: Module.TensorGenerator[TypeAA],
+                        target: Module.TensorGenerator[TypeAA]): TensorAlgebra.Generator = source.right
+
+  override def isIdempotentAction(left: TensorAlgebra.Generator,
+                                  coefficient: Z2PolynomialRing.Element,
+                                  right: TensorAlgebra.Generator): Boolean =
+    (left.factors.length == 1) && (left.factors(0).isIdempotent) && (right.factors.isEmpty) ||
+      (left.factors.isEmpty) && (right.factors.length == 1) && (right.factors(0).isIdempotent)
+
 
   implicit class AMinusExtensions(a: AMinus) {
     def asTypeAA: TypeAA = {

@@ -11,6 +11,10 @@ object StrandUtils {
 
   implicit class StrandImprovements(base: Strand) {
     def crosses(other: Strand): Boolean = (base._1 < other._1) ^ (base._2 < other._2)
+
+    def round: (Int, Int) = (base._1.round, base._2.round)
+
+    def isStraight: Boolean = base._1 == base._2
   }
 }
 

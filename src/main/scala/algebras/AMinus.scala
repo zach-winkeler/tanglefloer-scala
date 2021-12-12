@@ -3,7 +3,7 @@ package algebras
 import algebras.Sign.Sign
 import scalaz.Scalaz._
 import tangles.{StrandDiagram, StrandDiagramSpan}
-import tangles.StrandUtils.Strand
+import tangles.StrandUtils._
 import utilities.Functions.partialBijections
 import utilities.IndexedSeqUtils.IndexedSeqExtensions
 
@@ -48,6 +48,8 @@ object AMinus {
   class Generator(val algebra: AMinus, val strands: Map[Float, Float]) {
     def toElement: Element = new Element(algebra, Map(this -> algebra.ring.one))
 
+    def isIdempotent: Boolean = strands.forall(_.isStraight)
+
     def leftIdempotent: AMinus.Generator = algebra.idempotent(strands.keys)
 
     def rightIdempotent: AMinus.Generator = algebra.idempotent(strands.values)
@@ -68,7 +70,7 @@ object AMinus {
 
     override def hashCode: Int = Seq(strands).map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
 
-    override def toString: String = strands.toString.substring(3)
+    override def toString: String = strands.map(_.round).toString.substring(3)
   }
 
   class Element(val algebra: AMinus, _terms: Map[AMinus.Generator, Z2PolynomialRing.Element]) {

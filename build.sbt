@@ -14,4 +14,4 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.10" % "test"
 libraryDependencies += "org.scalatestplus" %% "scalacheck-1-15" % "3.2.10.0" % "test"
 
 libraryDependencies += "org.scala-graph" %% "graph-core" % "1.13.3"
-libraryDependencies += "org.scala-graph" %% "graph-dot" % "1.13.0"
+libraryDependencies += "org.scala-graph" %% "graph-dot" % "1.13.3"
