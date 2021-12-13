@@ -1,8 +1,8 @@
 package algebras
 
-import algebras.Sign.Sign
+import algebras.Sign.{Positive, Sign}
 import scalaz.Scalaz._
-import tangles.{StrandDiagram, StrandDiagramSpan}
+import tangles.{StrandDiagram, StrandDiagramSpan, StrandDiagramSpanElement}
 import tangles.StrandUtils._
 import utilities.Functions.partialBijections
 import utilities.IndexedSeqUtils.IndexedSeqExtensions
@@ -42,6 +42,9 @@ class AMinus(val signs: IndexedSeq[Sign]) {
       (0 until signs.length+1).map(_.toFloat).toSet,
       (0 until signs.length+1).map(_.toFloat).toSet
     ).map(gen)
+
+  def orangeVars: IndexedSeq[Z2PolynomialRing.Element] =
+    signs.view.zipWithIndex.map(si => if (si._1 == Positive) ring.vars(si._2) else ring.zero).toIndexedSeq
 }
 
 object AMinus {
@@ -54,14 +57,14 @@ object AMinus {
 
     def rightIdempotent: AMinus.Generator = algebra.idempotent(strands.values)
 
-    def toStrandDiagram: StrandDiagram = {
-      new StrandDiagram(algebra.strandDiagramSpan, strands, algebra.orangeStrands, algebra.signs, algebra.ring.vars)
+    def asStrandDiagram: StrandDiagram = {
+      new StrandDiagram(algebra.strandDiagramSpan, strands, algebra.orangeStrands, algebra.signs, algebra.orangeVars)
     }
 
-    def d: Element = this.toStrandDiagram.dPlus.toAMinusElement(algebra)
+    def d: Element = this.asStrandDiagram.dPlus.toAMinusElement(algebra)
 
     def *(other: Generator): Element =
-      (this.toStrandDiagram * other.toStrandDiagram).toAMinusElement(this.algebra)
+      (this.asStrandDiagram * other.asStrandDiagram).toAMinusElement(this.algebra)
 
     override def equals(other: Any): Boolean = other match {
       case other: Generator => this.algebra == other.algebra && this.strands == other.strands
@@ -75,6 +78,14 @@ object AMinus {
 
   class Element(val algebra: AMinus, _terms: Map[AMinus.Generator, Z2PolynomialRing.Element]) {
     val terms: Map[AMinus.Generator, Z2PolynomialRing.Element] = _terms.filter(_._2 != algebra.ring.zero)
+
+    def asStrandDiagramSpanElement: StrandDiagramSpanElement = {
+      var result = algebra.strandDiagramSpan.zero
+      for ((g, c) <- this.terms) {
+        result += c *: g.asStrandDiagram.toElement
+      }
+      result
+    }
 
     def +(other: Element): Element = {
       assert(this.algebra == other.algebra)

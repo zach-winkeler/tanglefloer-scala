@@ -51,7 +51,7 @@ abstract class Module[M <: Module[M]](val ring: Z2PolynomialRing,
     val s = source.getGenerator
     val t = target.getGenerator
     val oldEdge = (s ~+#> t)(EdgeLabel(left, coefficient, right))
-    val oldCoefficient = (graph find oldEdge) match {
+    val oldCoefficient = graph find oldEdge match {
       case Some(et) => et.edge match {
         case _ :~> _ + (l: EdgeLabel) => l.coefficient
         case _ => throw new RuntimeException("incorrectly labeled edge")
@@ -139,7 +139,9 @@ object Module {
   }
 
   class TensorElement[M <: Module[M]](val module: Module[M],
-                                      val terms: Map[_ <: TensorGenerator[M], Z2PolynomialRing.Element]) {
+                                      _terms: Map[_ <: TensorGenerator[M], Z2PolynomialRing.Element]) {
+    val terms: Map[_ <: TensorGenerator[M], Z2PolynomialRing.Element] = _terms.filter(_._2 != module.ring.zero)
+
     def +(other: TensorElement[M]): TensorElement[M] = {
       assert(this.module == other.module)
       new TensorElement(this.module,
@@ -156,8 +158,10 @@ object Module {
     }
   }
 
-  class Element[M <: Module[M]](module: Module[M], terms: Map[Generator[M], Z2PolynomialRing.Element])
-  extends TensorElement[M](module, terms) {
+  class Element[M <: Module[M]](module: Module[M], _terms: Map[Generator[M], Z2PolynomialRing.Element])
+  extends TensorElement[M](module, _terms) {
+    override val terms: Map[Generator[M], Z2PolynomialRing.Element] = _terms.filter(_._2 != module.ring.zero)
+
     def +(other: Element[M]): Element[M] = {
       assert(this.module == other.module)
       new Element(this.module,

@@ -17,4 +17,6 @@ object Functions {
       target.flatMap(y => injections(source - x, target - y).map(_ + (x -> y)))
     }
   }
+
+  implicit def tuple2ToIndexedSeq[T](t: (T,T)): IndexedSeq[T] = IndexedSeq(t._1, t._2)
 }
