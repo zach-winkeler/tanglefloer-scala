@@ -1,17 +1,17 @@
 package utilities
 
 object Functions {
-  def partialBijections[S,T](source: Set[S], target: Set[T]): Set[Map[S,T]] = {
-    var result = Set.empty[Map[S,T]]
+  def partialBijections[S,T](source: Set[S], target: Set[T]): Set[Set[(S,T)]] = {
+    var result = Set.empty[Set[(S,T)]]
     for (subset <- source.subsets()) {
       result ++= injections(subset, target)
     }
     result
   }
 
-  def injections[S,T](source: Set[S], target: Set[T]): Set[Map[S,T]] = {
+  def injections[S,T](source: Set[S], target: Set[T]): Set[Set[(S,T)]] = {
     if (source.isEmpty) {
-      Set(Map.empty)
+      Set(Set.empty[(S,T)])
     } else {
       val x = source.head
       target.flatMap(y => injections(source - x, target - y).map(_ + (x -> y)))

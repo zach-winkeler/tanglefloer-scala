@@ -9,10 +9,10 @@ class TensorAlgebraTests extends AnyFunSuite {
   private val R = A.ring
   private val TA = new TensorAlgebra(A)
   private val u0 = R("u0")
-  private val a = A.gen(Map(0f -> 0f))
-  private val b = A.gen(Map(0f -> 1f))
-  private val c = A.gen(Map(1f -> 1f))
-  private val d = A.gen(Map(1f -> 0f))
+  private val a = A.gen(Set(0f -> 0f))
+  private val b = A.gen(Set(0f -> 1f))
+  private val c = A.gen(Set(1f -> 1f))
+  private val d = A.gen(Set(1f -> 0f))
   private val da =
     new TensorAlgebra.Element(TA, Map(
       new TensorAlgebra.Generator(TA, IndexedSeq(d, a)) -> R.one

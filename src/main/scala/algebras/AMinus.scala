@@ -1,5 +1,7 @@
 package algebras
 
+import scala.language.implicitConversions
+
 import algebras.Sign.{Positive, Sign}
 import scalaz.Scalaz._
 import tangles.{StrandDiagram, StrandDiagramSpan, StrandDiagramSpanElement}
@@ -31,34 +33,36 @@ class AMinus(val signs: IndexedSeq[Sign]) {
   val zero: Element = new Element(this, Map.empty[AMinus.Generator, Z2PolynomialRing.Element])
 
   val strandDiagramSpan: StrandDiagramSpan = new StrandDiagramSpan(ring)
-  val orangeStrands: IndexedSeq[Strand] = signs.indices.map(y => (y + 0.5f, y + 0.5f))
+  val orangeStrands: Set[VariableStrand] =
+    signs.indices.map(y => VariableStrand(y+0.5f, y+0.5f, signs(y),
+      if (signs(y) == Positive) ring.vars(positives.indexOf(y)) else ring.zero)).toSet
 
-  def idempotent(occupied: Iterable[Float]): Generator = gen(occupied.map(p => p -> p).toMap)
-  def gen(strands: Map[Float, Float]): Generator = new AMinus.Generator(this, strands)
-  def elt(strands: Map[Float, Float]): Element = gen(strands).toElement
+  def idempotent(occupied: Iterable[Float]): Generator = gen(occupied.map(p => Strand(p, p)).toSet)
+  def gen(strands: Set[Strand]): Generator = new AMinus.Generator(this, strands)
+  def elt(strands: Set[Strand]): Element = gen(strands).toElement
 
   def gens: Set[Generator] =
     partialBijections(
       (0 until signs.length+1).map(_.toFloat).toSet,
       (0 until signs.length+1).map(_.toFloat).toSet
-    ).map(gen)
+    ).map(s => gen(s.map(t => Strand(t._1, t._2))))
 
   def orangeVars: IndexedSeq[Z2PolynomialRing.Element] =
     signs.view.zipWithIndex.map(si => if (si._1 == Positive) ring.vars(si._2) else ring.zero).toIndexedSeq
 }
 
 object AMinus {
-  class Generator(val algebra: AMinus, val strands: Map[Float, Float]) {
+  class Generator(val algebra: AMinus, val strands: Set[Strand]) {
     def toElement: Element = new Element(algebra, Map(this -> algebra.ring.one))
 
     def isIdempotent: Boolean = strands.forall(_.isStraight)
 
-    def leftIdempotent: AMinus.Generator = algebra.idempotent(strands.keys)
+    def leftIdempotent: AMinus.Generator = algebra.idempotent(strands.map(_.start))
 
-    def rightIdempotent: AMinus.Generator = algebra.idempotent(strands.values)
+    def rightIdempotent: AMinus.Generator = algebra.idempotent(strands.map(_.end))
 
     def asStrandDiagram: StrandDiagram = {
-      new StrandDiagram(algebra.strandDiagramSpan, strands, algebra.orangeStrands, algebra.signs, algebra.orangeVars)
+      new StrandDiagram(algebra.strandDiagramSpan, strands, algebra.orangeStrands)
     }
 
     def d: Element = this.asStrandDiagram.dPlus.toAMinusElement(algebra)

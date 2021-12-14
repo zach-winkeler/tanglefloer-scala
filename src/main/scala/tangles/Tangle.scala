@@ -1,8 +1,8 @@
 package tangles
 
-import algebras.AMinus
 import algebras.Sign.Sign
-import tangles.ETangleType.{Straight, Cup, Cap, Over, Under, ETangleType}
+import tangles.ETangleType.{Cap, Cup, ETangleType, Over, Straight, Under}
+import tangles.StrandUtils.DirectedStrand
 
 object ETangleType extends Enumeration {
   type ETangleType = Value
@@ -15,9 +15,62 @@ class ETangle(val kind: ETangleType, val signs: IndexedSeq[Sign], val pos: Int) 
     assert (signs(pos-1) == -signs(pos))
   }
 
+  def leftStrands: Set[DirectedStrand] = kind match {
+    case Straight | Over => for ((sign, i) <- signs.zipWithIndex.toSet) yield DirectedStrand(i + 0.5f, i + 0.5f, sign)
+    case Cup => for ((sign, i) <- signs.zipWithIndex.toSet if i < pos || i > pos+2) yield {
+      i match {
+        case _ if i < pos => DirectedStrand(i + 0.5f, i + 0.5f, sign)
+        case _ if i > pos+2 => DirectedStrand(i + 0.5f, i + 2.5f, sign)
+      }
+    }
+    case Cap => for ((sign, i) <- signs.zipWithIndex.toSet) yield {
+      i match {
+        case _ if i < pos || i > pos+2 => DirectedStrand(i + 0.5f, i + 0.5f, sign)
+        case _ if i == pos => DirectedStrand(i + 0.5f, i + 0.75f, sign)
+        case _ if i == pos+1 => DirectedStrand(i + 0.5f, i + 0.25f, sign)
+      }
+    }
+    case Under => for ((sign, i) <- signs.zipWithIndex.toSet) yield {
+      i match {
+        case _ if i < pos || i > pos+2 => DirectedStrand(i + 0.5f, i + 0.5f, sign)
+        case _ if i == pos => DirectedStrand(pos + 1.5f, pos + 0.5f, sign)
+        case _ if i == pos+1 => DirectedStrand(pos + 0.5f, pos + 1.5f, sign)
+      }
+    }
+  }
+
+  def rightStrands: Set[DirectedStrand] = kind match {
+    case Straight | Under => for ((sign, i) <- signs.zipWithIndex.toSet) yield DirectedStrand(i + 0.5f, i + 0.5f, sign)
+    case Cup => for ((sign, i) <- signs.zipWithIndex.toSet) yield {
+      i match {
+        case _ if i < pos || i > pos+2 => DirectedStrand(i + 0.5f, i + 0.5f, sign)
+        case _ if i == pos => DirectedStrand(i + 0.75f, i + 0.5f, sign)
+        case _ if i == pos+1 => DirectedStrand(i + 0.25f, i + 0.5f, sign)
+      }
+    }
+    case Cap => for ((sign, i) <- signs.zipWithIndex.toSet if i < pos || i > pos+2) yield {
+      i match {
+        case _ if i < pos => DirectedStrand(i + 0.5f, i + 0.5f, sign)
+        case _ if i > pos+2 => DirectedStrand(i + 0.5f, i + 2.5f, sign)
+      }
+    }
+    case Over => for ((sign, i) <- signs.zipWithIndex.toSet) yield {
+      i match {
+        case _ if i < pos || i > pos+2 => DirectedStrand(i + 0.5f, i + 0.5f, sign)
+        case _ if i == pos => DirectedStrand(pos + 0.5f, pos + 1.5f, sign)
+        case _ if i == pos+1 => DirectedStrand(pos + 1.5f, pos + 0.5f, sign)
+      }
+    }
+  }
+
   def leftSigns: IndexedSeq[Sign] = kind match {
     case Cup => signs.slice(0, pos) ++ signs.slice(pos+2, signs.length)
     case Under => signs.slice(0, pos) ++: signs(pos+1) +: signs(pos) +: signs.slice(pos+2, signs.length)
+    case _ => signs
+  }
+
+  def middleSigns: IndexedSeq[Sign] = kind match {
+    case Cup | Cap => signs.slice(0, pos) ++ signs.slice(pos+2, signs.length)
     case _ => signs
   }
 
