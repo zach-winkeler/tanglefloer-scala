@@ -1,13 +1,13 @@
 package tangles
 
+import scala.language.implicitConversions
+
 import scalaz.Scalaz._
 import scalaz.Semigroup
 import algebras.Sign.{Negative, Positive, Sign}
 import algebras.{AMinus, Z2PolynomialRing}
 import tangles.StrandUtils._
 import utilities.Functions._
-
-import scala.language.implicitConversions
 
 object StrandUtils {
   trait StrandLike {
@@ -24,7 +24,7 @@ object StrandUtils {
   }
 
   case class Strand(start: Float, end: Float) extends StrandLike {
-    
+    override def toString: String = start.toString + " -> " + end.toString
   }
 
   object Strand {
@@ -85,23 +85,31 @@ object StrandUtils {
     private val _endsBetweenStarts: (StrandLike, StrandLike) => Boolean =
       (lower, upper) => (base endsAboveStart lower) && (base endsBelowStart upper)
 
-    def round: (Int, Int) = (base.start.round, base.end.round)
+    def round: IntStrand = IntStrand(base.start.round, base.end.round)
 
     def isStraight: Boolean = base.start == base.end
+
+    case class IntStrand(start: Int, end: Int) {
+      override def toString: String = start.toString + " -> " + end.toString
+    }
   }
 }
 
-class StrandDiagram(val module: StrandDiagramSpan,
-                    val blackStrands: Set[Strand],
-                    val orangeStrands: Set[VariableStrand]) {
+class StrandDiagram(val module: StrandDiagramSpan, val blackStrands: Set[Strand]) {
   def toAMinusGenerator(algebra: AMinus): AMinus.Generator = new AMinus.Generator(algebra, blackStrands)
+
+  def leftIdempotentStrands: Set[Strand] =
+    blackStrands.map(s => s.start -> s.start)
+
+  def rightIdempotentStrands: Set[Strand] =
+    blackStrands.map(s => s.end -> s.end)
 
   def dPlus: StrandDiagramSpanElement = {
     var result = module.zero
     for (s1 <- blackStrands;
          s2 <- blackStrands if (s1 startsBelow s2) && (s1 crosses s2)) {
       var coefficient = module.ring.one
-      for (o <- orangeStrands if (o crosses s1) && (o crosses s2)) {
+      for (o <- module.orangeStrands if (o crosses s1) && (o crosses s2)) {
         if (o.sign == Positive) {
           coefficient *= o.variable
         } else {
@@ -119,7 +127,7 @@ class StrandDiagram(val module: StrandDiagramSpan,
          s2 <- blackStrands if (s1 startsBelow s2) && !(s1 crosses s2)) {
       val (newS1, newS2) = cross(s1, s2)
       var coefficient = module.ring.one
-      for (o <- orangeStrands if (o crosses newS1) && (o crosses newS2)) {
+      for (o <- module.orangeStrands if (o crosses newS1) && (o crosses newS2)) {
         if (o.sign == Negative) {
           coefficient *= o.variable
         } else {
@@ -145,7 +153,7 @@ class StrandDiagram(val module: StrandDiagramSpan,
           }
           newHalfStrands = newHalfStrands.incl((s1, s2))
           newStrands += s1.start -> s2.end
-          for (o <- orangeStrands if (o crosses s1) && (o crosses s2)) {
+          for (o <- module.orangeStrands if (o crosses s1) && (o crosses s2)) {
             if (o.sign == Positive) {
               coefficient *= o.variable
             } else {
@@ -156,11 +164,11 @@ class StrandDiagram(val module: StrandDiagramSpan,
           coefficient *= module.ring.zero
       }
     }
-    coefficient *: new StrandDiagram(module, newStrands, orangeStrands).toElement
+    coefficient *: new StrandDiagram(module, newStrands).toElement
   }
 
   def crossed(s1: Strand, s2: Strand): StrandDiagram = {
-    new StrandDiagram(this.module, blackStrands -- List(s1, s2) ++ cross(s1, s2), orangeStrands)
+    new StrandDiagram(this.module, blackStrands -- List(s1, s2) ++ cross(s1, s2))
   }
 
   def uncrossed(s1: Strand, s2: Strand): StrandDiagram = crossed(s1, s2)
@@ -173,20 +181,19 @@ class StrandDiagram(val module: StrandDiagramSpan,
     case that: StrandDiagram =>
       (that canEqual this) &&
         module == that.module &&
-        blackStrands == that.blackStrands &&
-        orangeStrands == that.orangeStrands
+        blackStrands == that.blackStrands
     case _ => false
   }
 
   override def hashCode(): Int = {
-    val state = Seq(blackStrands, orangeStrands)
+    val state = Seq(blackStrands)
     state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
   }
 
   override def toString: String = blackStrands.map(_.round).toString.substring(3)
 }
 
-class StrandDiagramSpan(val ring: Z2PolynomialRing) {
+class StrandDiagramSpan(val ring: Z2PolynomialRing, val orangeStrands: Set[VariableStrand]) {
   val zero: StrandDiagramSpanElement =
     new StrandDiagramSpanElement(this, Map.empty[StrandDiagram, Z2PolynomialRing.Element])
 }

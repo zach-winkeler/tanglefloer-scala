@@ -1,5 +1,7 @@
 package utilities
 
+import scala.language.implicitConversions
+
 object Functions {
   def partialBijections[S,T](source: Set[S], target: Set[T]): Set[Set[(S,T)]] = {
     var result = Set.empty[Set[(S,T)]]

@@ -1,7 +1,6 @@
 package utilities
 
 import scalax.collection.Graph
-import scalax.collection.GraphEdge._
 import scalax.collection.io.dot._
 import implicits._
 import modules.Module
@@ -15,7 +14,7 @@ object ModuleRenderer {
       if (!showIdempotents) {
         def edgeFilter(p: Param[Generator[M],LkDiEdge]): Boolean = p match {
           case innerEdge: Graph[Generator[M],LkDiEdge]#EdgeT => innerEdge.edge match {
-            case LkDiEdge (source, target, label) => label match {
+            case LkDiEdge (_, _, label) => label match {
               case EdgeLabel (left, coefficient, right) => !module.companion.isIdempotentAction(left, coefficient, right)
             }
             case _ => true
@@ -37,7 +36,7 @@ object ModuleRenderer {
     def edgeTransformer(innerEdge: Graph[Generator[M],LkDiEdge]#EdgeT): Option[(DotGraph,DotEdgeStmt)] = {
       innerEdge.edge match {
         case LkDiEdge(source, target, label) => label match {
-          case EdgeLabel(left, coefficient, right) =>
+          case EdgeLabel(left, _, right) =>
               Some((root,
                 DotEdgeStmt(source.toString,
                   target.toString,

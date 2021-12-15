@@ -8,9 +8,9 @@ import tangles.StrandUtils.VariableStrand
 class StrandDiagramTests extends AnyFunSuite {
   private val R = new Z2PolynomialRing(IndexedSeq("u0"))
   private val u0 = R("u0")
-  private val m = new StrandDiagramSpan(R)
-  private val x = new StrandDiagram(m, Set(0f -> 0f, 1f -> 1f), Set(VariableStrand(0.5f, 0.5f, Negative, u0))).toElement
-  private val y = new StrandDiagram(m, Set(0f -> 1f, 1f -> 0f), Set(VariableStrand(0.5f, 0.5f, Negative, u0))).toElement
+  private val m = new StrandDiagramSpan(R, Set(VariableStrand(0.5f, 0.5f, Negative, u0)))
+  private val x = new StrandDiagram(m, Set(0f -> 0f, 1f -> 1f)).toElement
+  private val y = new StrandDiagram(m, Set(0f -> 1f, 1f -> 0f)).toElement
 
   test("d_plus") {
     assertResult(m.zero) {x.dPlus}

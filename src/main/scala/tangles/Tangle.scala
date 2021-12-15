@@ -80,6 +80,15 @@ class ETangle(val kind: ETangleType, val signs: IndexedSeq[Sign], val pos: Int) 
     case _ => signs
   }
 
+  def leftPoints: Set[Float] = (0 until leftSigns.length+1).map(_.toFloat).toSet
+
+  def middlePoints: Set[Float] = kind match {
+    case Cup | Cap => (0 until middleSigns.length+1).map(_.toFloat).toSet - pos.toFloat
+    case _ => (0 until middleSigns.length+1).map(_.toFloat).toSet
+  }
+
+  def rightPoints: Set[Float] = (0 until rightSigns.length+1).map(_.toFloat).toSet
+
   def height: Int = signs.length
 
   override def equals(other: Any): Boolean = other match {

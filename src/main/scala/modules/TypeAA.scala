@@ -35,8 +35,8 @@ object TypeAA extends ModuleCompanion[TypeAA] {
   override def isIdempotentAction(left: TensorAlgebra.Generator,
                                   coefficient: Z2PolynomialRing.Element,
                                   right: TensorAlgebra.Generator): Boolean =
-    (left.factors.length == 1) && (left.factors(0).isIdempotent) && (right.factors.isEmpty) ||
-      (left.factors.isEmpty) && (right.factors.length == 1) && (right.factors(0).isIdempotent)
+    (left.factors.length == 1) && left.factors(0).isIdempotent && right.factors.isEmpty ||
+      left.factors.isEmpty && (right.factors.length == 1) && right.factors(0).isIdempotent
 
 
   implicit class AMinusExtensions(a: AMinus) {
@@ -74,7 +74,7 @@ object TypeAA extends ModuleCompanion[TypeAA] {
       for ((g, c) <- e.terms) {
         result += c *: g.asTypeAAGenerator(module).toElement
       }
-      return result
+      result
     }
   }
 }

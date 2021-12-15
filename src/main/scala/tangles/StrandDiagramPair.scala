@@ -19,14 +19,14 @@ class StrandDiagramPair(val module: StrandDiagramPairSpan, val left: StrandDiagr
         || right.blackStrands.exists(deltaACase1RightCondition(s1, s2, _))) {
         coefficient *= module.ring.zero
       }
-      for (o <- left.orangeStrands if deltaACase1LeftCondition(s1, s2, o)) {
+      for (o <- left.module.orangeStrands if deltaACase1LeftCondition(s1, s2, o)) {
         if (o.sign == Positive) {
           coefficient *= o.variable
         } else {
           coefficient *= module.ring.zero
         }
       }
-      for (o <- right.orangeStrands if deltaACase1RightCondition(s1, s2, o)) {
+      for (o <- right.module.orangeStrands if deltaACase1RightCondition(s1, s2, o)) {
         if (o.sign == Negative) {
           coefficient *= o.variable
         } else {

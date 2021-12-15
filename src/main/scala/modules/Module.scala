@@ -2,7 +2,6 @@ package modules
 
 import algebras.{AMinus, TensorAlgebra, Z2PolynomialRing}
 import modules.Module.{Generator, TensorGenerator}
-import scalax.collection.GraphPredef.Param
 import scalax.collection.edge.LkDiEdge
 import scalax.collection.edge.Implicits._
 import scalax.collection.immutable.Graph
@@ -164,9 +163,7 @@ object Module {
 
     def +(other: Element[M]): Element[M] = {
       assert(this.module == other.module)
-      new Element(this.module,
-        this.terms.asInstanceOf[Map[Generator[M], Z2PolynomialRing.Element]]
-          |+| other.terms.asInstanceOf[Map[Generator[M], Z2PolynomialRing.Element]])
+      new Element(this.module, this.terms |+| other.terms)
     }
 
     override def *:(scalar: Z2PolynomialRing.Element): Element[M] =

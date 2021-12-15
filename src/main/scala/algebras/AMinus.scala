@@ -32,10 +32,10 @@ class AMinus(val signs: IndexedSeq[Sign]) {
 
   val zero: Element = new Element(this, Map.empty[AMinus.Generator, Z2PolynomialRing.Element])
 
-  val strandDiagramSpan: StrandDiagramSpan = new StrandDiagramSpan(ring)
   val orangeStrands: Set[VariableStrand] =
     signs.indices.map(y => VariableStrand(y+0.5f, y+0.5f, signs(y),
       if (signs(y) == Positive) ring.vars(positives.indexOf(y)) else ring.zero)).toSet
+  val strandDiagramSpan: StrandDiagramSpan = new StrandDiagramSpan(ring, orangeStrands)
 
   def idempotent(occupied: Iterable[Float]): Generator = gen(occupied.map(p => Strand(p, p)).toSet)
   def gen(strands: Set[Strand]): Generator = new AMinus.Generator(this, strands)
@@ -62,7 +62,7 @@ object AMinus {
     def rightIdempotent: AMinus.Generator = algebra.idempotent(strands.map(_.end))
 
     def asStrandDiagram: StrandDiagram = {
-      new StrandDiagram(algebra.strandDiagramSpan, strands, algebra.orangeStrands)
+      new StrandDiagram(algebra.strandDiagramSpan, strands)
     }
 
     def d: Element = this.asStrandDiagram.dPlus.toAMinusElement(algebra)
