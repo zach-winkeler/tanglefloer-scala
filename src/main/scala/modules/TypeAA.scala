@@ -5,34 +5,34 @@ import modules.Module.{Element, Generator}
 import scalax.collection.edge.LkDiEdge
 import scalax.collection.immutable.Graph
 
-class TypeAA(ring: Z2PolynomialRing,
+class TypeAA[L](ring: Z2PolynomialRing,
              leftAlgebra: AMinus,
              rightAlgebra: AMinus,
              leftScalarAction: Z2PolynomialRing.Morphism,
              rightScalarAction: Z2PolynomialRing.Morphism)
             (leftTensorAlgebra: TensorAlgebra = new TensorAlgebra(leftAlgebra),
              rightTensorAlgebra: TensorAlgebra = new TensorAlgebra(rightAlgebra),
-             graph: Graph[Generator[TypeAA], LkDiEdge] = Graph.empty) extends Module[TypeAA](
+             graph: Graph[Generator[TypeAA[L], L], LkDiEdge] = Graph.empty[Generator[TypeAA[L], L], LkDiEdge]) extends Module[TypeAA[L], L](
   ring, leftAlgebra, rightAlgebra, leftScalarAction, rightScalarAction)(leftTensorAlgebra, rightTensorAlgebra, graph) {
-  override def self: TypeAA = this
+  override def self: TypeAA[L] = this
 
-  override def companion: ModuleCompanion[TypeAA] = TypeAA
+  override def companion: ModuleCompanion = TypeAA
 
   override def buildModule(ring: Z2PolynomialRing, leftAlgebra: AMinus, rightAlgebra: AMinus,
                            leftScalarAction: Z2PolynomialRing.Morphism, rightScalarAction: Z2PolynomialRing.Morphism)(
-    leftTensorAlgebra: TensorAlgebra, rightTensorAlgebra: TensorAlgebra, graph: Graph[Generator[TypeAA], LkDiEdge]): TypeAA =
-    new TypeAA(ring, leftAlgebra, rightAlgebra, leftScalarAction, rightScalarAction)(
+    leftTensorAlgebra: TensorAlgebra, rightTensorAlgebra: TensorAlgebra, graph: Graph[Generator[TypeAA[L],L], LkDiEdge]): TypeAA[L] =
+    new TypeAA[L](ring, leftAlgebra, rightAlgebra, leftScalarAction, rightScalarAction)(
       leftTensorAlgebra, rightTensorAlgebra, graph)
 }
 
-object TypeAA extends ModuleCompanion[TypeAA] {
-  def getLeftGenerator(source: Module.TensorGenerator[TypeAA],
-                       target: Module.TensorGenerator[TypeAA]): TensorAlgebra.Generator = source.left
+object TypeAA extends ModuleCompanion {
+  def getLeftGenerator[M <: Module[M, L],L](source: Module.TensorGenerator[M,L],
+                       target: Module.TensorGenerator[M,L]): TensorAlgebra.Generator = source.left
 
-  def getRightGenerator(source: Module.TensorGenerator[TypeAA],
-                        target: Module.TensorGenerator[TypeAA]): TensorAlgebra.Generator = source.right
+  def getRightGenerator[M <: Module[M, L],L](source: Module.TensorGenerator[M,L],
+                        target: Module.TensorGenerator[M,L]): TensorAlgebra.Generator = source.right
 
-  override def isIdempotentAction(left: TensorAlgebra.Generator,
+  override def isIdempotentAction[M <: Module[M, L],L](left: TensorAlgebra.Generator,
                                   coefficient: Z2PolynomialRing.Element,
                                   right: TensorAlgebra.Generator): Boolean =
     (left.factors.length == 1) && left.factors(0).isIdempotent && right.factors.isEmpty ||
@@ -40,11 +40,11 @@ object TypeAA extends ModuleCompanion[TypeAA] {
 
 
   implicit class AMinusExtensions(a: AMinus) {
-    def asTypeAA: TypeAA = {
-      var result = new TypeAA(a.ring, a, a,
+    def asTypeAA: TypeAA[AMinus.Generator] = {
+      var result = new TypeAA[AMinus.Generator](a.ring, a, a,
         Z2PolynomialRing.Morphism.identity(a.ring), Z2PolynomialRing.Morphism.identity(a.ring))()
       for (g <- a.gens) {
-        result = result.addGenerator(new Generator[TypeAA](result, g, g.leftIdempotent, g.rightIdempotent))
+        result = result.addGenerator(new Generator[TypeAA[AMinus.Generator],AMinus.Generator](result, g, g.leftIdempotent, g.rightIdempotent))
       }
       for (g <- a.gens) {
         result = result.addStructureMap(g.asTypeAAGenerator(result), g.d.asTypeAAElement(result))
@@ -64,12 +64,12 @@ object TypeAA extends ModuleCompanion[TypeAA] {
   }
 
   implicit class AMinusGeneratorExtensions(g: AMinus.Generator) {
-    def asTypeAAGenerator(module: TypeAA): Generator[TypeAA] =
-      new Generator[TypeAA](module, g, g.leftIdempotent, g.rightIdempotent)
+    def asTypeAAGenerator(module: TypeAA[AMinus.Generator]): Generator[TypeAA[AMinus.Generator],AMinus.Generator] =
+      new Generator[TypeAA[AMinus.Generator],AMinus.Generator](module, g, g.leftIdempotent, g.rightIdempotent)
   }
 
   implicit class AMinusElementExtensions(e: AMinus.Element) {
-    def asTypeAAElement(module: TypeAA): Element[TypeAA] = {
+    def asTypeAAElement(module: TypeAA[AMinus.Generator]): Element[TypeAA[AMinus.Generator],AMinus.Generator] = {
       var result = module.zero
       for ((g, c) <- e.terms) {
         result += c *: g.asTypeAAGenerator(module).toElement

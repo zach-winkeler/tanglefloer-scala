@@ -9,11 +9,11 @@ import scalax.collection.GraphPredef.Param
 import scalax.collection.edge.LkDiEdge
 
 object ModuleRenderer {
-  def render[M <: Module[M]](module: Module[M], showIdempotents: Boolean = true): String = {
+  def render[M <: Module[M,L],L](module: Module[M,L], showIdempotents: Boolean = true): String = {
     val graph =
       if (!showIdempotents) {
-        def edgeFilter(p: Param[Generator[M],LkDiEdge]): Boolean = p match {
-          case innerEdge: Graph[Generator[M],LkDiEdge]#EdgeT => innerEdge.edge match {
+        def edgeFilter(p: Param[Generator[M,L],LkDiEdge]): Boolean = p match {
+          case innerEdge: Graph[Generator[M,L],LkDiEdge]#EdgeT => innerEdge.edge match {
             case LkDiEdge (_, _, label) => label match {
               case EdgeLabel (left, coefficient, right) => !module.companion.isIdempotentAction(left, coefficient, right)
             }
@@ -33,7 +33,7 @@ object ModuleRenderer {
       attrList  = List()
     )
 
-    def edgeTransformer(innerEdge: Graph[Generator[M],LkDiEdge]#EdgeT): Option[(DotGraph,DotEdgeStmt)] = {
+    def edgeTransformer(innerEdge: Graph[Generator[M,L],LkDiEdge]#EdgeT): Option[(DotGraph,DotEdgeStmt)] = {
       innerEdge.edge match {
         case LkDiEdge(source, target, label) => label match {
           case EdgeLabel(left, _, right) =>
@@ -46,7 +46,7 @@ object ModuleRenderer {
       }
     }
 
-    def nodeTransformer(innerNode: Graph[Generator[M],LkDiEdge]#NodeT): Option[(DotGraph, DotNodeStmt)] =
+    def nodeTransformer(innerNode: Graph[Generator[M,L],LkDiEdge]#NodeT): Option[(DotGraph, DotNodeStmt)] =
       Some((root, DotNodeStmt(NodeId(innerNode.value.toString), Seq.empty[DotAttr])))
 
     graph.toDot(root, edgeTransformer, iNodeTransformer=Some(nodeTransformer))
