@@ -1,23 +1,21 @@
 package utilities
 
-import scalax.collection.Graph
 import scalax.collection.io.dot._
 import implicits._
 import modules.Module
 import modules.Module.{EdgeLabel, Generator}
 import scalax.collection.GraphPredef.Param
 import scalax.collection.edge.LkDiEdge
+import scalax.collection.Graph
 
 object ModuleRenderer {
   def render[M <: Module[M,L],L](module: Module[M,L], showIdempotents: Boolean = true): String = {
-    val graph =
+    val graph: Graph[Generator[M,L],LkDiEdge] =
       if (!showIdempotents) {
         def edgeFilter(p: Param[Generator[M,L],LkDiEdge]): Boolean = p match {
           case innerEdge: Graph[Generator[M,L],LkDiEdge]#EdgeT => innerEdge.edge match {
-            case LkDiEdge (_, _, label) => label match {
-              case EdgeLabel (left, coefficient, right) => !module.companion.isIdempotentAction(left, coefficient, right)
-            }
-            case _ => true
+            case LkDiEdge (_, _, EdgeLabel(left, coefficient, right)) =>
+              !module.companion.isIdempotentAction(left, coefficient, right)
           }
           case _ => true
         }

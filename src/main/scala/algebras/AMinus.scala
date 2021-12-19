@@ -1,12 +1,11 @@
 package algebras
 
 import scala.language.implicitConversions
-
 import algebras.Sign.{Positive, Sign}
 import scalaz.Scalaz._
-import tangles.{StrandDiagram, StrandDiagramSpan, StrandDiagramSpanElement}
+import tangles.{Strand, VariableStrand}
 import tangles.StrandUtils._
-import utilities.Functions.partialBijections
+import utilities.Functions._
 import utilities.IndexedSeqUtils.IndexedSeqExtensions
 
 object Sign extends Enumeration {
@@ -28,14 +27,13 @@ object Sign extends Enumeration {
 class AMinus(val signs: IndexedSeq[Sign]) {
   import AMinus._
   val positives: IndexedSeq[Int] = signs.indicesWhere(_ == Sign.Positive)
-  val ring = new Z2PolynomialRing(positives.map(i => s"u$i"))
+  val ring = new Z2PolynomialRing(positives.indices.map(i => s"u$i"))
 
   val zero: Element = new Element(this, Map.empty[AMinus.Generator, Z2PolynomialRing.Element])
 
   val orangeStrands: Set[VariableStrand] =
     signs.indices.map(y => VariableStrand(y+0.5f, y+0.5f, signs(y),
       if (signs(y) == Positive) ring.vars(positives.indexOf(y)) else ring.zero)).toSet
-  val strandDiagramSpan: StrandDiagramSpan = new StrandDiagramSpan(ring, orangeStrands)
 
   def idempotent(occupied: Iterable[Float]): Generator = gen(occupied.map(p => Strand(p, p)).toSet)
   def gen(strands: Set[Strand]): Generator = new AMinus.Generator(this, strands)
@@ -49,6 +47,20 @@ class AMinus(val signs: IndexedSeq[Sign]) {
 
   def orangeVars: IndexedSeq[Z2PolynomialRing.Element] =
     signs.view.zipWithIndex.map(si => if (si._1 == Positive) ring.vars(si._2) else ring.zero).toIndexedSeq
+
+  def canEqual(other: Any): Boolean = other.isInstanceOf[AMinus]
+
+  override def equals(other: Any): Boolean = other match {
+    case that: AMinus =>
+      (that canEqual this) &&
+        signs == that.signs
+    case _ => false
+  }
+
+  override def hashCode(): Int = {
+    val state = Seq(signs)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  }
 }
 
 object AMinus {
@@ -61,14 +73,57 @@ object AMinus {
 
     def rightIdempotent: AMinus.Generator = algebra.idempotent(strands.map(_.end))
 
-    def asStrandDiagram: StrandDiagram = {
-      new StrandDiagram(algebra.strandDiagramSpan, strands)
+    def complement: AMinus.Generator = {
+      assert(strands.forall(s => s.start == s.end))
+      algebra.gen((0 until algebra.signs.length+1).toSet[Int].map(y => Strand(y.toFloat, y.toFloat)) &~ strands)
     }
 
-    def d: Element = this.asStrandDiagram.dPlus.toAMinusElement(algebra)
+    def uncrossed(s1: Strand, s2: Strand): Generator =
+      algebra.gen(strands -- List(s1, s2) ++ tuple2ToIndexedSeq(uncross(s1, s2)))
 
-    def *(other: Generator): Element =
-      (this.asStrandDiagram * other.asStrandDiagram).toAMinusElement(this.algebra)
+    def d: Element = {
+      var result = algebra.zero
+      for (s1 <- strands; s2 <- strands if (s1 startsBelow s2) && (s1 crosses s2)) {
+        var coefficient = algebra.ring.one
+        for (o <- algebra.orangeStrands if (o crosses s1) && (o crosses s2)) {
+          if (o.sign == Positive) {
+            coefficient *= o.variable
+          } else {
+            coefficient *= algebra.ring.zero
+          }
+        }
+        result += coefficient *: this.uncrossed(s1, s2).toElement
+      }
+      result
+    }
+
+    def *(other: Generator): Element = {
+      var coefficient = algebra.ring.one
+      var newHalfStrands = Set.empty[(Strand, Strand)]
+      var newStrands = Set.empty[Strand]
+      for (s1 <- this.strands) {
+        other.strands.find(_.start == s1.end) match {
+          case Some(s2) =>
+            for ((s3, s4) <- newHalfStrands) {
+              if ((s1 crosses s3) && (s2 crosses s4)) {
+                coefficient *= algebra.ring.zero
+              }
+            }
+            newHalfStrands = newHalfStrands.incl((s1, s2))
+            newStrands += s1.start -> s2.end
+            for (o <- algebra.orangeStrands if (o crosses s1) && (o crosses s2)) {
+              if (o.sign == Positive) {
+                coefficient *= o.variable
+              } else {
+                coefficient *= algebra.ring.zero
+              }
+            }
+          case None =>
+            coefficient *= algebra.ring.zero
+        }
+      }
+      coefficient *: algebra.gen(newStrands).toElement
+    }
 
     override def equals(other: Any): Boolean = other match {
       case other: Generator => this.algebra == other.algebra && this.strands == other.strands
@@ -82,14 +137,6 @@ object AMinus {
 
   class Element(val algebra: AMinus, _terms: Map[AMinus.Generator, Z2PolynomialRing.Element]) {
     val terms: Map[AMinus.Generator, Z2PolynomialRing.Element] = _terms.filter(_._2 != algebra.ring.zero)
-
-    def asStrandDiagramSpanElement: StrandDiagramSpanElement = {
-      var result = algebra.strandDiagramSpan.zero
-      for ((g, c) <- this.terms) {
-        result += c *: g.asStrandDiagram.toElement
-      }
-      result
-    }
 
     def +(other: Element): Element = {
       assert(this.algebra == other.algebra)

@@ -2,46 +2,42 @@ package tangles
 
 import scala.language.implicitConversions
 
-import scalaz.Scalaz._
-import scalaz.Semigroup
-import algebras.Sign.{Negative, Positive, Sign}
-import algebras.{AMinus, Z2PolynomialRing}
-import tangles.StrandUtils._
-import utilities.Functions._
+import algebras.Sign.Sign
+import algebras.Z2PolynomialRing
+
+trait StrandLike {
+  def start: Float
+  def end: Float
+}
+
+trait DirectedStrandLike extends StrandLike {
+  def sign: Sign
+}
+
+trait VariableStrandLike extends DirectedStrandLike {
+  def variable: Z2PolynomialRing.Element
+}
+
+case class Strand(start: Float, end: Float) extends StrandLike {
+  override def toString: String = start.toString + " -> " + end.toString
+}
+
+object Strand {
+  implicit def fromTuple(ys: (Float, Float)): Strand = Strand(ys._1, ys._2)
+}
+
+case class DirectedStrand(start: Float, end: Float, sign: Sign) extends DirectedStrandLike {
+  implicit def toStrand: Strand = (start, end)
+}
+
+case class VariableStrand(start: Float, end: Float, sign: Sign, variable: Z2PolynomialRing.Element)
+  extends VariableStrandLike {
+  implicit def toStrand: Strand = (start, end)
+
+  implicit def toDirectedStrand: DirectedStrand = DirectedStrand(start, end, sign)
+}
 
 object StrandUtils {
-  trait StrandLike {
-    def start: Float
-    def end: Float
-  }
-
-  trait DirectedStrandLike extends StrandLike {
-    def sign: Sign
-  }
-
-  trait VariableStrandLike extends DirectedStrandLike {
-    def variable: Z2PolynomialRing.Element
-  }
-
-  case class Strand(start: Float, end: Float) extends StrandLike {
-    override def toString: String = start.toString + " -> " + end.toString
-  }
-
-  object Strand {
-    implicit def fromTuple(ys: (Float, Float)): Strand = Strand(ys._1, ys._2)
-  }
-
-  case class DirectedStrand(start: Float, end: Float, sign: Sign) extends DirectedStrandLike {
-    implicit def toStrand: Strand = (start, end)
-  }
-
-  case class VariableStrand(start: Float, end: Float, sign: Sign, variable: Z2PolynomialRing.Element)
-    extends VariableStrandLike {
-    implicit def toStrand: Strand = (start, end)
-
-    implicit def toDirectedStrand: DirectedStrand = DirectedStrand(start, end, sign)
-  }
-
   def cross(s1: Strand, s2: Strand): (Strand, Strand) = (s1.start -> s2.end, s2.start -> s1.end)
 
   def uncross(s1: Strand, s2: Strand): (Strand, Strand) = cross(s1, s2)
@@ -95,155 +91,163 @@ object StrandUtils {
   }
 }
 
-class StrandDiagram(val module: StrandDiagramSpan, val blackStrands: Set[Strand]) {
-  def toAMinusGenerator(algebra: AMinus): AMinus.Generator = new AMinus.Generator(algebra, blackStrands)
+object PartialBijectionUtils {
+  implicit class PartialBijectionExtensions(pb: Set[Strand]) {
+    def sourceId: Set[Strand] = pb.map(s => s.start -> s.start)
 
-  def leftIdempotentStrands: Set[Strand] =
-    blackStrands.map(s => s.start -> s.start)
-
-  def rightIdempotentStrands: Set[Strand] =
-    blackStrands.map(s => s.end -> s.end)
-
-  def dPlus: StrandDiagramSpanElement = {
-    var result = module.zero
-    for (s1 <- blackStrands;
-         s2 <- blackStrands if (s1 startsBelow s2) && (s1 crosses s2)) {
-      var coefficient = module.ring.one
-      for (o <- module.orangeStrands if (o crosses s1) && (o crosses s2)) {
-        if (o.sign == Positive) {
-          coefficient *= o.variable
-        } else {
-          coefficient *= module.ring.zero
-        }
-      }
-      result += coefficient *: this.uncrossed(s1, s2).toElement
-    }
-    result
+    def targetId: Set[Strand] = pb.map(s => s.end -> s.end)
   }
-
-  def dMinus: StrandDiagramSpanElement = {
-    var result = module.zero
-    for (s1 <- blackStrands;
-         s2 <- blackStrands if (s1 startsBelow s2) && !(s1 crosses s2)) {
-      val (newS1, newS2) = cross(s1, s2)
-      var coefficient = module.ring.one
-      for (o <- module.orangeStrands if (o crosses newS1) && (o crosses newS2)) {
-        if (o.sign == Negative) {
-          coefficient *= o.variable
-        } else {
-          coefficient *= module.ring.zero
-        }
-      }
-      result += coefficient *: this.crossed(s1, s2).toElement
-    }
-    result
-  }
-
-  def *(other: StrandDiagram): StrandDiagramSpanElement = {
-    var coefficient = module.ring.one
-    var newHalfStrands = Set.empty[(Strand, Strand)]
-    var newStrands = Set.empty[Strand]
-    for (s1 <- this.blackStrands) {
-      other.blackStrands.find(_.start == s1.end) match {
-        case Some(s2) =>
-          for ((s3, s4) <- newHalfStrands) {
-            if ((s1 crosses s3) && (s2 crosses s4)) {
-              coefficient *= module.ring.zero
-            }
-          }
-          newHalfStrands = newHalfStrands.incl((s1, s2))
-          newStrands += s1.start -> s2.end
-          for (o <- module.orangeStrands if (o crosses s1) && (o crosses s2)) {
-            if (o.sign == Positive) {
-              coefficient *= o.variable
-            } else {
-              coefficient *= module.ring.zero
-            }
-          }
-        case None =>
-          coefficient *= module.ring.zero
-      }
-    }
-    coefficient *: new StrandDiagram(module, newStrands).toElement
-  }
-
-  def crossed(s1: Strand, s2: Strand): StrandDiagram = {
-    new StrandDiagram(this.module, blackStrands -- List(s1, s2) ++ cross(s1, s2))
-  }
-
-  def uncrossed(s1: Strand, s2: Strand): StrandDiagram = crossed(s1, s2)
-
-  def toElement: StrandDiagramSpanElement = new StrandDiagramSpanElement(module, Map(this -> module.ring.one))
-
-  def canEqual(other: Any): Boolean = other.isInstanceOf[StrandDiagram]
-
-  override def equals(other: Any): Boolean = other match {
-    case that: StrandDiagram =>
-      (that canEqual this) &&
-        module == that.module &&
-        blackStrands == that.blackStrands
-    case _ => false
-  }
-
-  override def hashCode(): Int = {
-    val state = Seq(blackStrands)
-    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
-  }
-
-  override def toString: String = blackStrands.map(_.round).toString.substring(3)
 }
 
-class StrandDiagramSpan(val ring: Z2PolynomialRing, val orangeStrands: Set[VariableStrand]) {
-  val zero: StrandDiagramSpanElement =
-    new StrandDiagramSpanElement(this, Map.empty[StrandDiagram, Z2PolynomialRing.Element])
-}
-
-class StrandDiagramSpanElement(val module: StrandDiagramSpan, _terms: Map[StrandDiagram, Z2PolynomialRing.Element]) {
-  val terms: Map[StrandDiagram, Z2PolynomialRing.Element] = _terms.filter(_._2 != module.ring.zero)
-  
-  def toAMinusElement(algebra: AMinus): AMinus.Element = {
-    var result = algebra.zero
-    for ((g, c) <- terms) {
-      result += c *: g.toAMinusGenerator(algebra).toElement
-    }
-    result
-  }
-
-  def dPlus: StrandDiagramSpanElement = {
-    var result = module.zero
-    for ((g,c) <- terms) {
-      result += c *: g.dPlus
-    }
-    result
-  }
-
-  def dMinus: StrandDiagramSpanElement = {
-    var result = module.zero
-    for ((g,c) <- terms) {
-      result += c *: g.dMinus
-    }
-    result
-  }
-
-  def +(other: StrandDiagramSpanElement): StrandDiagramSpanElement = {
-    assert (this.module == other.module)
-    new StrandDiagramSpanElement(this.module, this.terms |+| other.terms)
-  }
-
-  def *:(scalar: Z2PolynomialRing.Element): StrandDiagramSpanElement =
-    new StrandDiagramSpanElement(module, terms.view.mapValues(scalar * _).toMap)
-
-  override def equals(other: Any): Boolean = other match {
-    case other: StrandDiagramSpanElement => this.module == other.module && this.terms == other.terms
-    case _ => false
-  }
-
-  override def hashCode: Int = Seq(terms).map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
-
-  override def toString: String = terms.mkString(" + ") match { case "" => "0" case s => s }
-}
-
-object StrandDiagramSpanElement {
-  implicit val strandDiagramSpanElementSemigroup: Semigroup[StrandDiagramSpanElement] =
-    Semigroup.instance((a, b) => a + b)
-}
+//class StrandDiagram(val module: StrandDiagramSpan, val blackStrands: Set[Strand]) {
+//  def toAMinusGenerator(algebra: AMinus): AMinus.Generator = new AMinus.Generator(algebra, blackStrands)
+//
+//  def leftIdempotentStrands: Set[Strand] =
+//    blackStrands.map(s => s.start -> s.start)
+//
+//  def rightIdempotentStrands: Set[Strand] =
+//    blackStrands.map(s => s.end -> s.end)
+//
+//  def dPlus: StrandDiagramSpanElement = {
+//    var result = module.zero
+//    for (s1 <- blackStrands;
+//         s2 <- blackStrands if (s1 startsBelow s2) && (s1 crosses s2)) {
+//      var coefficient = module.ring.one
+//      for (o <- module.orangeStrands if (o crosses s1) && (o crosses s2)) {
+//        if (o.sign == Positive) {
+//          coefficient *= o.variable
+//        } else {
+//          coefficient *= module.ring.zero
+//        }
+//      }
+//      result += coefficient *: this.uncrossed(s1, s2).toElement
+//    }
+//    result
+//  }
+//
+//  def dMinus: StrandDiagramSpanElement = {
+//    var result = module.zero
+//    for (s1 <- blackStrands;
+//         s2 <- blackStrands if (s1 startsBelow s2) && !(s1 crosses s2)) {
+//      val (newS1, newS2) = cross(s1, s2)
+//      var coefficient = module.ring.one
+//      for (o <- module.orangeStrands if (o crosses newS1) && (o crosses newS2)) {
+//        if (o.sign == Negative) {
+//          coefficient *= o.variable
+//        } else {
+//          coefficient *= module.ring.zero
+//        }
+//      }
+//      result += coefficient *: this.crossed(s1, s2).toElement
+//    }
+//    result
+//  }
+//
+//  def *(other: StrandDiagram): StrandDiagramSpanElement = {
+//    var coefficient = module.ring.one
+//    var newHalfStrands = Set.empty[(Strand, Strand)]
+//    var newStrands = Set.empty[Strand]
+//    for (s1 <- this.blackStrands) {
+//      other.blackStrands.find(_.start == s1.end) match {
+//        case Some(s2) =>
+//          for ((s3, s4) <- newHalfStrands) {
+//            if ((s1 crosses s3) && (s2 crosses s4)) {
+//              coefficient *= module.ring.zero
+//            }
+//          }
+//          newHalfStrands = newHalfStrands.incl((s1, s2))
+//          newStrands += s1.start -> s2.end
+//          for (o <- module.orangeStrands if (o crosses s1) && (o crosses s2)) {
+//            if (o.sign == Positive) {
+//              coefficient *= o.variable
+//            } else {
+//              coefficient *= module.ring.zero
+//            }
+//          }
+//        case None =>
+//          coefficient *= module.ring.zero
+//      }
+//    }
+//    coefficient *: new StrandDiagram(module, newStrands).toElement
+//  }
+//
+//  def crossed(s1: Strand, s2: Strand): StrandDiagram = {
+//    new StrandDiagram(this.module, blackStrands -- List(s1, s2) ++ cross(s1, s2))
+//  }
+//
+//  def uncrossed(s1: Strand, s2: Strand): StrandDiagram = crossed(s1, s2)
+//
+//  def toElement: StrandDiagramSpanElement = new StrandDiagramSpanElement(module, Map(this -> module.ring.one))
+//
+//  def canEqual(other: Any): Boolean = other.isInstanceOf[StrandDiagram]
+//
+//  override def equals(other: Any): Boolean = other match {
+//    case that: StrandDiagram =>
+//      (that canEqual this) &&
+//        module == that.module &&
+//        blackStrands == that.blackStrands
+//    case _ => false
+//  }
+//
+//  override def hashCode(): Int = {
+//    val state = Seq(blackStrands)
+//    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+//  }
+//
+//  override def toString: String = blackStrands.map(_.round).toString.substring(3)
+//}
+//
+//class StrandDiagramSpan(val ring: Z2PolynomialRing, val orangeStrands: Set[VariableStrand]) {
+//  val zero: StrandDiagramSpanElement =
+//    new StrandDiagramSpanElement(this, Map.empty[StrandDiagram, Z2PolynomialRing.Element])
+//}
+//
+//class StrandDiagramSpanElement(val module: StrandDiagramSpan, _terms: Map[StrandDiagram, Z2PolynomialRing.Element]) {
+//  val terms: Map[StrandDiagram, Z2PolynomialRing.Element] = _terms.filter(_._2 != module.ring.zero)
+//
+//  def toAMinusElement(algebra: AMinus): AMinus.Element = {
+//    var result = algebra.zero
+//    for ((g, c) <- terms) {
+//      result += c *: g.toAMinusGenerator(algebra).toElement
+//    }
+//    result
+//  }
+//
+//  def dPlus: StrandDiagramSpanElement = {
+//    var result = module.zero
+//    for ((g,c) <- terms) {
+//      result += c *: g.dPlus
+//    }
+//    result
+//  }
+//
+//  def dMinus: StrandDiagramSpanElement = {
+//    var result = module.zero
+//    for ((g,c) <- terms) {
+//      result += c *: g.dMinus
+//    }
+//    result
+//  }
+//
+//  def +(other: StrandDiagramSpanElement): StrandDiagramSpanElement = {
+//    assert (this.module == other.module)
+//    new StrandDiagramSpanElement(this.module, this.terms |+| other.terms)
+//  }
+//
+//  def *:(scalar: Z2PolynomialRing.Element): StrandDiagramSpanElement =
+//    new StrandDiagramSpanElement(module, terms.view.mapValues(scalar * _).toMap)
+//
+//  override def equals(other: Any): Boolean = other match {
+//    case other: StrandDiagramSpanElement => this.module == other.module && this.terms == other.terms
+//    case _ => false
+//  }
+//
+//  override def hashCode: Int = Seq(terms).map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+//
+//  override def toString: String = terms.mkString(" + ") match { case "" => "0" case s => s }
+//}
+//
+//object StrandDiagramSpanElement {
+//  implicit val strandDiagramSpanElementSemigroup: Semigroup[StrandDiagramSpanElement] =
+//    Semigroup.instance((a, b) => a + b)
+//}

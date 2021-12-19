@@ -1,7 +1,7 @@
 package modules
 
 import algebras.{AMinus, TensorAlgebra, Z2PolynomialRing}
-import modules.Module.{Element, Generator}
+import modules.Module.{Element, Generator, TensorElement, TensorGenerator}
 import scalax.collection.edge.LkDiEdge
 import scalax.collection.immutable.Graph
 
@@ -38,24 +38,25 @@ object TypeAA extends ModuleCompanion {
     (left.factors.length == 1) && left.factors(0).isIdempotent && right.factors.isEmpty ||
       left.factors.isEmpty && (right.factors.length == 1) && right.factors(0).isIdempotent
 
+  override def isValidStructureMap[M <: Module[M, L], L](source: TensorGenerator[M, L],
+                                                         target: TensorElement[M, L]): Boolean =
+    target.terms.keys.forall(t => t.left.factors.isEmpty && t.right.factors.isEmpty)
 
   implicit class AMinusExtensions(a: AMinus) {
     def asTypeAA: TypeAA[AMinus.Generator] = {
       var result = new TypeAA[AMinus.Generator](a.ring, a, a,
         Z2PolynomialRing.Morphism.identity(a.ring), Z2PolynomialRing.Morphism.identity(a.ring))()
       for (g <- a.gens) {
-        result = result.addGenerator(new Generator[TypeAA[AMinus.Generator],AMinus.Generator](result, g, g.leftIdempotent, g.rightIdempotent))
+        result.addGenerator(new Generator[TypeAA[AMinus.Generator],AMinus.Generator](result, g, g.leftIdempotent, g.rightIdempotent))
       }
       for (g <- a.gens) {
-        result = result.addStructureMap(g.asTypeAAGenerator(result), g.d.asTypeAAElement(result))
+        result.addStructureMap(g.asTypeAAGenerator(result), g.d.asTypeAAElement(result))
         for (h <- a.gens) {
           if (h.rightIdempotent == g.leftIdempotent) {
-            result =
-              result.addStructureMap((h <*>: g.asTypeAAGenerator(result)).forceGen, (h * g).asTypeAAElement(result))
+            result.addStructureMap((h <*>: g.asTypeAAGenerator(result)).forceGen, (h * g).asTypeAAElement(result))
           }
           if (g.rightIdempotent == h.leftIdempotent) {
-            result =
-              result.addStructureMap((g.asTypeAAGenerator(result) :<*> h).forceGen, (g * h).asTypeAAElement(result))
+            result.addStructureMap((g.asTypeAAGenerator(result) :<*> h).forceGen, (g * h).asTypeAAElement(result))
           }
         }
       }

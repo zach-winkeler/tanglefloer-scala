@@ -21,12 +21,26 @@ class Z2PolynomialRing(val varNames: IndexedSeq[Object]) {
       throw new RuntimeException("no such variable exists")
     }
   }
+
+  def tensorInclusions(other: Z2PolynomialRing): (Z2PolynomialRing.Morphism, Z2PolynomialRing.Morphism) = {
+    val z2 = new Z2PolynomialRing(IndexedSeq())
+    val f = new Z2PolynomialRing.Morphism(z2, this, Map.empty)
+    val g = new Z2PolynomialRing.Morphism(z2, other, Map.empty)
+    f.pushoutInclusions(g)
+  }
+
+  override def hashCode(): Int = {
+    val state = Seq(varNames)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  }
 }
 
 object Z2PolynomialRing {
   class Morphism(val source: Z2PolynomialRing,
                  val target: Z2PolynomialRing,
                  val mapping: Map[Object, Object]) {
+    assert(mapping.keySet == source.varNames.toSet)
+    assert(mapping.values.toSet.subsetOf(target.varNames.toSet))
 
     def inverse = new Morphism(target, source, mapping.map(_.swap))
 
@@ -41,7 +55,28 @@ object Z2PolynomialRing {
       }
     }
 
+    def compose(other: Z2PolynomialRing.Morphism): Z2PolynomialRing.Morphism = {
+      assert(this.source == other.target)
+      new Z2PolynomialRing.Morphism(other.source, this.target,
+        other.mapping.view.mapValues(this.mapping(_)).toMap)
+    }
+
     def retract(y: Element) : Element = inverse.apply(y)
+
+    def pushoutInclusions(other: Z2PolynomialRing.Morphism): (Z2PolynomialRing.Morphism, Z2PolynomialRing.Morphism) = {
+      assert(this.source == other.source)
+      val leftVars = this.target.varNames.toSet &~ this.mapping.values.toSet
+      val commonVars = this.source.varNames.toSet
+      val rightVars = other.target.varNames.toSet &~ other.mapping.values.toSet
+      val pushout = new Z2PolynomialRing(
+        (leftVars.map((_,1)) ++ commonVars.map((_,2)) ++ rightVars.map((_,3)))
+          .toIndexedSeq)
+      val inLeft = new Z2PolynomialRing.Morphism(this.target, pushout,
+        (leftVars.map(v => v -> (v,1)) ++ commonVars.map(v => this.mapping(v) -> (v,2))).toMap)
+      val inRight = new Z2PolynomialRing.Morphism(other.target, pushout,
+        (rightVars.map(v => v -> (v,3)) ++ commonVars.map(v => other.mapping(v) -> (v,2))).toMap)
+      (inLeft, inRight)
+    }
   }
 
   object Morphism {

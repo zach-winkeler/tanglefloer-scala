@@ -2,7 +2,6 @@ package tangles
 
 import algebras.Sign.Sign
 import tangles.ETangleType.{Cap, Cup, ETangleType, Over, Straight, Under}
-import tangles.StrandUtils.DirectedStrand
 
 object ETangleType extends Enumeration {
   type ETangleType = Value
@@ -12,7 +11,7 @@ object ETangleType extends Enumeration {
 class ETangle(val kind: ETangleType, val signs: IndexedSeq[Sign], val pos: Int) {
   assert (pos < signs.length)
   if (kind == Cup || kind == Cap) {
-    assert (signs(pos-1) == -signs(pos))
+    assert (signs(pos) == -signs(pos+1))
   }
 
   def leftStrands: Set[DirectedStrand] = kind match {
@@ -83,7 +82,7 @@ class ETangle(val kind: ETangleType, val signs: IndexedSeq[Sign], val pos: Int) 
   def leftPoints: Set[Float] = (0 until leftSigns.length+1).map(_.toFloat).toSet
 
   def middlePoints: Set[Float] = kind match {
-    case Cup | Cap => (0 until middleSigns.length+1).map(_.toFloat).toSet - pos.toFloat
+    case Cup | Cap => (0 until signs.length+1).map(_.toFloat).toSet - (pos+1).toFloat
     case _ => (0 until middleSigns.length+1).map(_.toFloat).toSet
   }
 

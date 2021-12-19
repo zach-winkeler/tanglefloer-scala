@@ -6,7 +6,22 @@ import scalaz.Semigroup
 class TensorAlgebra(val algebra: AMinus) {
   import TensorAlgebra._
   def zero: Element = new Element(this, Map.empty)
+  def one: Element = oneGen.toElement
   def oneGen: Generator = new Generator(this, IndexedSeq())
+
+  def canEqual(other: Any): Boolean = other.isInstanceOf[TensorAlgebra]
+
+  override def equals(other: Any): Boolean = other match {
+    case that: TensorAlgebra =>
+      (that canEqual this) &&
+        algebra == that.algebra
+    case _ => false
+  }
+
+  override def hashCode(): Int = {
+    val state = Seq(algebra)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  }
 }
 
 object TensorAlgebra {
