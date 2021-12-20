@@ -2,7 +2,7 @@ package utilities
 
 import scalax.collection.io.dot._
 import implicits._
-import modules.Module
+import modules.{Module, TypeAA, TypeDA, TypeDD}
 import modules.Module.{EdgeLabel, Generator}
 import scalax.collection.GraphPredef.Param
 import scalax.collection.edge.LkDiEdge
@@ -39,7 +39,7 @@ object ModuleRenderer {
                 DotEdgeStmt(source.toString,
                   target.toString,
                   List(DotAttr("label", label.toString),
-                    DotAttr("color", edgeColor(left.factors.length, right.factors.length))))))
+                    DotAttr("color", edgeColor(source.value.module, left.factors.length, right.factors.length))))))
         }
       }
     }
@@ -50,6 +50,9 @@ object ModuleRenderer {
     graph.toDot(root, edgeTransformer, iNodeTransformer=Some(nodeTransformer))
   }
 
-  def edgeColor(sizeLeft: Int, sizeRight: Int): String =
-    Seq("black", "blue", "red", "green", "purple")((sizeLeft + sizeRight) min 4)
+  def edgeColor(module: Module[_,_], sizeLeft: Int, sizeRight: Int): String = module match {
+    case _: TypeAA[_] => Seq("black", "blue", "red", "green", "purple")((sizeLeft + sizeRight) min 4)
+    case _: TypeDA[_] => Seq("black", "blue", "red", "green", "purple")(sizeRight min 4)
+    case _: TypeDD[_] => "black"
+  }
 }

@@ -14,10 +14,22 @@ class AMinusTests extends AnyFunSuite {
   private val c = A.elt(Set(1f -> 1f))
   private val d = A.elt(Set(1f -> 0f))
 
+  private val gx = A.gen(Set(0f -> 0f, 1f -> 1f))
+  private val ga = A.gen(Set(0f -> 0f))
+  private val gc = A.gen(Set(1f -> 1f))
+  private val ge = A.gen(Set())
+
   private val B = new AMinus(IndexedSeq(Negative))
   private val S = B.ring
   private val xB = B.elt(Set(0f -> 0f, 1f -> 1f))
   private val yB = B.elt(Set(0f -> 1f, 1f -> 0f))
+
+  test("complement") {
+    assertResult(ge) {gx.complement}
+    assertResult(gx) {ge.complement}
+    assertResult(gc) {ga.complement}
+    assertResult(ga) {gc.complement}
+  }
 
   test("differential") {
     assertResult(A.zero) {x.d}

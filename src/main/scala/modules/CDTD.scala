@@ -235,7 +235,7 @@ object CDTD {
       for (b <- (g.label) if (b endsBetween (s1,s2)) && ((b crosses s1) ^ (b crosses s2))) {
         coefficient *= g.module.ring.zero
       }
-      for (b <- r.strands if b startsBetween (s1,s2)) {
+      for (b <- r.strands if b startsBetweenEnds (s1,s2)) {
         coefficient *= g.module.ring.zero
       }
       // orange strands
@@ -246,7 +246,7 @@ object CDTD {
           coefficient *= g.module.ring.zero
         }
       }
-      for (o <- r.algebra.orangeStrands if o startsBetween (s1,s2)) {
+      for (o <- r.algebra.orangeStrands if o startsBetweenEnds (s1,s2)) {
         if (o.sign == Positive) {
           coefficient *= g.module.rightScalarAction(o.variable)
         } else {

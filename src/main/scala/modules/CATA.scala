@@ -20,19 +20,19 @@ object CATA {
   def from(etangle: ETangle): TypeAA[Set[Strand]] = {
     val leftAlgebra = new AMinus(etangle.middleSigns)
     val rightAlgebra = new AMinus(etangle.rightSigns)
-    val leftScalarAction = new Z2PolynomialRing.Morphism(leftAlgebra.ring, rightAlgebra.ring,
-      (for (o <- etangle.rightStrands.filter(_.sign == Positive) if leftAlgebra.positives.contains(o.start.toInt)) yield
-        (s"u${leftAlgebra.positives.indexOf(o.start.toInt)}"
-          -> s"u${rightAlgebra.positives.indexOf(o.end.toInt)}")).toMap
+    val rightScalarAction = new Z2PolynomialRing.Morphism(rightAlgebra.ring, leftAlgebra.ring,
+      (for (o <- etangle.rightStrands.filter(_.sign == Positive)) yield
+        (s"u${rightAlgebra.positives.indexOf(o.end.toInt)}"
+          -> s"u${leftAlgebra.positives.indexOf(o.start.toInt)}")).toMap
     )
-    val result = new TypeAA[Set[Strand]](rightAlgebra.ring, leftAlgebra, rightAlgebra,
-      leftScalarAction, Z2PolynomialRing.Morphism.identity(rightAlgebra.ring))()
+    val result = new TypeAA[Set[Strand]](leftAlgebra.ring, leftAlgebra, rightAlgebra,
+      Z2PolynomialRing.Morphism.identity(leftAlgebra.ring), rightScalarAction)()
 
     val orangeStrands = etangle.rightStrands.map(o => VariableStrand(o.start, o.end, o.sign,
       if (o.sign == Positive) {
-        rightAlgebra.ring.vars(rightAlgebra.positives.indexOf(o.start.toInt))
+        leftAlgebra.ring.vars(leftAlgebra.positives.indexOf(o.start.toInt))
       } else
-        rightAlgebra.ring.zero
+        leftAlgebra.ring.zero
     ))
 
     val gens = partialBijections(etangle.middlePoints, etangle.rightPoints).map(pb =>

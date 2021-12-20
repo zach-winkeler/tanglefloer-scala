@@ -1,6 +1,6 @@
 package tangles
 
-import algebras.Sign.Sign
+import algebras.Sign.{Positive, Sign}
 import tangles.ETangleType.{Cap, Cup, ETangleType, Over, Straight, Under}
 
 object ETangleType extends Enumeration {
@@ -19,14 +19,13 @@ class ETangle(val kind: ETangleType, val signs: IndexedSeq[Sign], val pos: Int) 
     case Cup => for ((sign, i) <- signs.zipWithIndex.toSet if i < pos || i > pos+2) yield {
       i match {
         case _ if i < pos => DirectedStrand(i + 0.5f, i + 0.5f, sign)
-        case _ if i > pos+2 => DirectedStrand(i + 0.5f, i + 2.5f, sign)
+        case _ if i > pos+2 => DirectedStrand(i + 0.5f, i + 1.5f, sign)
       }
     }
     case Cap => for ((sign, i) <- signs.zipWithIndex.toSet) yield {
       i match {
-        case _ if i < pos || i > pos+2 => DirectedStrand(i + 0.5f, i + 0.5f, sign)
-        case _ if i == pos => DirectedStrand(i + 0.5f, i + 0.75f, sign)
-        case _ if i == pos+1 => DirectedStrand(i + 0.5f, i + 0.25f, sign)
+        case _ if i <= pos => DirectedStrand(i + 0.5f, i + 0.5f, sign)
+        case _ if i >= pos+1 => DirectedStrand(i + 0.5f, i - 0.5f, sign)
       }
     }
     case Under => for ((sign, i) <- signs.zipWithIndex.toSet) yield {
@@ -42,15 +41,14 @@ class ETangle(val kind: ETangleType, val signs: IndexedSeq[Sign], val pos: Int) 
     case Straight | Under => for ((sign, i) <- signs.zipWithIndex.toSet) yield DirectedStrand(i + 0.5f, i + 0.5f, sign)
     case Cup => for ((sign, i) <- signs.zipWithIndex.toSet) yield {
       i match {
-        case _ if i < pos || i > pos+2 => DirectedStrand(i + 0.5f, i + 0.5f, sign)
-        case _ if i == pos => DirectedStrand(i + 0.75f, i + 0.5f, sign)
-        case _ if i == pos+1 => DirectedStrand(i + 0.25f, i + 0.5f, sign)
+        case _ if i <= pos => DirectedStrand(i + 0.5f, i + 0.5f, sign)
+        case _ if i >= pos+1 => DirectedStrand(i - 0.5f, i + 0.5f, sign)
       }
     }
     case Cap => for ((sign, i) <- signs.zipWithIndex.toSet if i < pos || i > pos+2) yield {
       i match {
         case _ if i < pos => DirectedStrand(i + 0.5f, i + 0.5f, sign)
-        case _ if i > pos+2 => DirectedStrand(i + 0.5f, i + 2.5f, sign)
+        case _ if i > pos+2 => DirectedStrand(i + 0.5f, i + 1.5f, sign)
       }
     }
     case Over => for ((sign, i) <- signs.zipWithIndex.toSet) yield {
@@ -69,7 +67,7 @@ class ETangle(val kind: ETangleType, val signs: IndexedSeq[Sign], val pos: Int) 
   }
 
   def middleSigns: IndexedSeq[Sign] = kind match {
-    case Cup | Cap => signs.slice(0, pos) ++ signs.slice(pos+2, signs.length)
+    case Cup | Cap => signs.slice(0, pos) ++ IndexedSeq(Positive) ++ signs.slice(pos+2, signs.length)
     case _ => signs
   }
 
@@ -81,10 +79,7 @@ class ETangle(val kind: ETangleType, val signs: IndexedSeq[Sign], val pos: Int) 
 
   def leftPoints: Set[Float] = (0 until leftSigns.length+1).map(_.toFloat).toSet
 
-  def middlePoints: Set[Float] = kind match {
-    case Cup | Cap => (0 until signs.length+1).map(_.toFloat).toSet - (pos+1).toFloat
-    case _ => (0 until middleSigns.length+1).map(_.toFloat).toSet
-  }
+  def middlePoints: Set[Float] = (0 until middleSigns.length+1).map(_.toFloat).toSet
 
   def rightPoints: Set[Float] = (0 until rightSigns.length+1).map(_.toFloat).toSet
 

@@ -128,6 +128,8 @@ object Module {
       val state = Seq(label, leftIdempotent, rightIdempotent, left, right)
       state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
     }
+
+    override def toString: String = left.toString + label.toString + right.toString
   }
 
   class Generator[M <: Module[M,L],L](module: Module[M, L], label: L, leftIdempotent: AMinus.Generator, rightIdempotent: AMinus.Generator)
@@ -187,6 +189,11 @@ object Module {
     def forceGen: TensorGenerator[M,L] = {
       assert(terms.tail.isEmpty && (terms.head._2 == module.ring.one))
       terms.head._1
+    }
+
+    override def toString: String = terms.mkString(" + ") match {
+      case "" => "0"
+      case s => s
     }
   }
 
