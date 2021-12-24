@@ -22,16 +22,9 @@ class ReductionTests extends AnyFunSuite {
 
   val unknotDA = cupDA <*> capDA
 
-  test("cup DA reduction") {
-    val e = cupDA.getReducibleEdge.get
-    print(e)
-    cupDA.reduceEdge(e)
-    reflect.io.File("out/cupDAReducedOnce.dot").writeAll(ModuleRenderer.render(cupDA, true))
-    reflect.io.File("out/cupDAReduced.dot").writeAll(ModuleRenderer.render(cupDA, true))
-  }
-
   test("unknot DA reduction") {
+    assertResult(24) {unknotDA.graph.nodes.size}
     unknotDA.reduce()
-    reflect.io.File("out/unknotDAReduced.dot").writeAll(ModuleRenderer.render(unknotDA, true))
+    assertResult(8) {unknotDA.graph.nodes.size}
   }
 }

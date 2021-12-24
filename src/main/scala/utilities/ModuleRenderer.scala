@@ -9,7 +9,7 @@ import scalax.collection.edge.LkDiEdge
 import scalax.collection.Graph
 
 object ModuleRenderer {
-  def render[M <: Module[M,L],L](module: Module[M,L], showIdempotents: Boolean = true): String = {
+  def render[M <: Module[M,L],L](module: Module[M,L], showIdempotents: Boolean = false): String = {
     val graph: Graph[Generator[M,L],LkDiEdge] =
       if (!showIdempotents) {
         def edgeFilter(p: Param[Generator[M,L],LkDiEdge]): Boolean = p match {

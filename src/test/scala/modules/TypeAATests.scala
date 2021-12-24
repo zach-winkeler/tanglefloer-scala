@@ -13,8 +13,4 @@ class TypeAATests extends AnyFunSuite {
   test("type AA") {
     assertResult(7) {typeAA.graph.nodes.size}
   }
-
-  test("dot rendering") {
-    reflect.io.File("out/graph.dot").writeAll(ModuleRenderer.render(typeAA, false))
-  }
 }

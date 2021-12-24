@@ -107,9 +107,6 @@ object CATA {
 
   def m2(g: Module.Generator[TypeAA[Set[Strand]],Set[Strand]], r: AMinus.Generator, orangeStrands: Set[VariableStrand]):
   Element[TypeAA[Set[Strand]],Set[Strand]] = {
-    if ((g.label) == Set(Strand(0f, 2f), Strand(1f, 1f)) && r.strands == Set(Strand(2f, 1f), Strand(1f, 0f))) {
-      print("hi")
-    }
     var coefficient = g.module.ring.one
     var newHalfStrands = Set.empty[(Strand, Strand)]
     var newStrands = Set.empty[Strand]
