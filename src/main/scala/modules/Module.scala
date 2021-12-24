@@ -141,6 +141,8 @@ object Module {
       case _ => false
     }
 
+    def incoming: Set[LkDiEdge[Graph[Generator[M,L],LkDiEdge]#NodeT]] = (module.graph get this).incoming.map(_.edge)
+
     def outgoing: Set[LkDiEdge[Graph[Generator[M,L],LkDiEdge]#NodeT]] = (module.graph get this).outgoing.map(_.edge)
 
     override def hashCode: Int = Seq(label).map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)

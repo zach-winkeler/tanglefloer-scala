@@ -18,7 +18,7 @@ class CATATests extends AnyFunSuite {
 
   test("straight type AA") {
     assertResult(7) {straightAA.graph.nodes.size}
-    reflect.io.File("out/straightAA.dot").writeAll(ModuleRenderer.render(straightAA, false))
+    reflect.io.File("out/straightAA.dot").writeAll(ModuleRenderer.render(straightAA, true))
   }
 
   test("cup type AA") {

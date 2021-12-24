@@ -21,7 +21,7 @@ class CDTDTests extends AnyFunSuite {
 
   test("straight type DD") {
     assertResult(7) {straightDD.graph.nodes.size}
-    reflect.io.File("out/straightDD.dot").writeAll(ModuleRenderer.render(straightDD, false))
+    reflect.io.File("out/straightDD.dot").writeAll(ModuleRenderer.render(straightDD, true))
   }
 
   test("straight negative type DD") {

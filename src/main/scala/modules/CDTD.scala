@@ -5,6 +5,7 @@ import algebras.Sign.{Negative, Positive}
 import algebras.TensorAlgebra.AMinusGeneratorExtensions
 import algebras.{AMinus, Z2PolynomialRing}
 import modules.Module.{Element, Generator, TensorElement}
+import tangles.ETangleType.{Cup, Cap}
 import tangles.StrandUtils._
 import tangles.PartialBijectionUtils._
 import tangles.{ETangle, Strand, VariableStrand}
@@ -44,13 +45,18 @@ object CDTD {
     val gens = partialBijections(etangle.leftPoints, etangle.middlePoints).map(pb =>
       pb.map(Strand.fromTuple)).map(strands => result.gen(strands))
 
+    val ignoreOrangeAt = etangle.kind match {
+      case Cup | Cap => Some(etangle.pos + 0.5f)
+      case _ => None
+    }
+
     for (g <- gens) {
       result.addGenerator(g)
     }
     for (g <- gens) {
       result.addStructureMap(g, g.leftIdempotent.toElement <*>: dMinus(g, orangeStrands) :<*> g.rightIdempotent.toElement)
-      result.addStructureMap(g, deltaLeft(g, orangeStrands) :<*> g.rightIdempotent.toElement)
-      result.addStructureMap(g, g.leftIdempotent.toElement  <*>: deltaRight(g, orangeStrands))
+      result.addStructureMap(g, deltaLeft(g, orangeStrands, ignoreOrangeAt) :<*> g.rightIdempotent.toElement)
+      result.addStructureMap(g, g.leftIdempotent.toElement  <*>: deltaRight(g, orangeStrands, ignoreOrangeAt))
     }
     result
   }
@@ -75,7 +81,9 @@ object CDTD {
     result
   }
 
-  def deltaLeft(g: Module.Generator[TypeDD[Set[Strand]],Set[Strand]], orangeStrands: Set[VariableStrand]):
+  def deltaLeft(g: Module.Generator[TypeDD[Set[Strand]],Set[Strand]],
+                orangeStrands: Set[VariableStrand],
+                ignoreOrangeAt: Option[Float] = None):
   TensorElement[TypeDD[Set[Strand]],Set[Strand]] = {
     var result: TensorElement[TypeDD[Set[Strand]],Set[Strand]] = (g.module).zero
     val l = g.leftIdempotent
@@ -90,7 +98,10 @@ object CDTD {
         coefficient *= g.module.ring.zero
       }
       // orange strands
-      for (o <- l.algebra.orangeStrands if (o endsBetween (s1,s2)) && ((o crosses s1) || (o crosses s2))) {
+      for (o <- l.algebra.orangeStrands if
+        (o endsBetween (s1,s2))
+          && ((o crosses s1) || (o crosses s2))
+          && (ignoreOrangeAt.getOrElse(-1f) != o.end)) {
         if (o.sign == Positive) {
           coefficient *= g.module.leftScalarAction(o.variable)
         } else {
@@ -118,7 +129,7 @@ object CDTD {
         coefficient *= g.module.ring.zero
       }
       // orange strands
-      for (o <- l.algebra.orangeStrands if o endsBetweenStarts (s1,s2)) {
+      for (o <- l.algebra.orangeStrands if (o endsBetweenStarts (s1,s2)) && (ignoreOrangeAt.getOrElse(-1f) != o.end)) {
         if (o.sign == Positive) {
           coefficient *= g.module.leftScalarAction(o.variable)
         } else {
@@ -146,7 +157,11 @@ object CDTD {
         coefficient *= g.module.ring.zero
       }
       // orange strands
-      for (o <- l.algebra.orangeStrands if (o endsAbove s1) && (o endsBelowStart s2) && (o crosses s1)) {
+      for (o <- l.algebra.orangeStrands if
+        (o endsAbove s1)
+          && (o endsBelowStart s2)
+          && (o crosses s1)
+          && (ignoreOrangeAt.getOrElse(-1f) != o.end)) {
         if (o.sign == Positive) {
           coefficient *= g.module.leftScalarAction(o.variable)
         } else {
@@ -175,7 +190,11 @@ object CDTD {
         coefficient *= g.module.ring.zero
       }
       // orange strands
-      for (o <- l.algebra.orangeStrands if (o endsBelow s1) && (o endsAboveStart s2) && (o crosses s1)) {
+      for (o <- l.algebra.orangeStrands if
+        (o endsBelow s1)
+          && (o endsAboveStart s2)
+          && (o crosses s1)
+          && (ignoreOrangeAt.getOrElse(-1f) != o.end)) {
         if (o.sign == Positive) {
           coefficient *= g.module.leftScalarAction(o.variable)
         } else {
@@ -196,7 +215,9 @@ object CDTD {
     result
   }
 
-  def deltaRight(g: Module.Generator[TypeDD[Set[Strand]],Set[Strand]], orangeStrands: Set[VariableStrand]):
+  def deltaRight(g: Module.Generator[TypeDD[Set[Strand]],Set[Strand]],
+                 orangeStrands: Set[VariableStrand],
+                 ignoreOrangeAt: Option[Float] = None):
   TensorElement[TypeDD[Set[Strand]],Set[Strand]] = {
     var result: TensorElement[TypeDD[Set[Strand]],Set[Strand]] = (g.module).zero
     val r = g.rightIdempotent
@@ -218,7 +239,10 @@ object CDTD {
           coefficient *= g.module.ring.zero
         }
       }
-      for (o <- r.algebra.orangeStrands if (o startsBetween (s1, s2)) && ((o crosses s1) || (o crosses s2))) {
+      for (o <- r.algebra.orangeStrands if
+        (o startsBetween (s1, s2))
+          && ((o crosses s1) || (o crosses s2))
+          && (ignoreOrangeAt.getOrElse(-1f) != o.start)) {
         if (o.sign == Positive) {
           coefficient *= g.module.rightScalarAction(o.variable)
         } else {
@@ -246,7 +270,9 @@ object CDTD {
           coefficient *= g.module.ring.zero
         }
       }
-      for (o <- r.algebra.orangeStrands if o startsBetweenEnds (s1,s2)) {
+      for (o <- r.algebra.orangeStrands if
+        (o startsBetweenEnds (s1,s2))
+          && (ignoreOrangeAt.getOrElse(-1f) != o.start)) {
         if (o.sign == Positive) {
           coefficient *= g.module.rightScalarAction(o.variable)
         } else {
@@ -274,7 +300,11 @@ object CDTD {
           coefficient *= g.module.ring.zero
         }
       }
-      for (o <- r.algebra.orangeStrands if (o startsBelowEnd s1) && (o startsAbove s2) && (o endsBelow s2)) {
+      for (o <- r.algebra.orangeStrands if
+        (o startsBelowEnd s1)
+          && (o startsAbove s2)
+          && (o endsBelow s2)
+          && (ignoreOrangeAt.getOrElse(-1f) != o.start)) {
         if (o.sign == Positive) {
           coefficient *= g.module.rightScalarAction(o.variable)
         } else {
@@ -296,7 +326,11 @@ object CDTD {
         coefficient *= g.module.ring.zero
       }
       // orange strands
-      for (o <- orangeStrands if (o startsAbove s1) && (o endsAbove s1) && (o endsBelowStart s2)) {
+      for (o <- orangeStrands if
+        (o startsAbove s1)
+          && (o endsAbove s1)
+          && (o endsBelowStart s2)
+          && (ignoreOrangeAt.getOrElse(-1f) != o.start)) {
         if (o.sign == Negative) {
           coefficient *= o.variable
         } else {

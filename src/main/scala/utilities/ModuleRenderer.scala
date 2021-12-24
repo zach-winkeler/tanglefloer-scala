@@ -40,7 +40,9 @@ object ModuleRenderer {
                   target.toString,
                   List(DotAttr("label", label.toString),
                     DotAttr("color", edgeColor(source.value.module, left.factors.length, right.factors.length))))))
+          case _ => throw new RuntimeException("did not match an edge label")
         }
+        case _ => throw new RuntimeException("did not match an edge")
       }
     }
 

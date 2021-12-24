@@ -91,7 +91,7 @@ object CATA {
           }
           newHalfStrands = newHalfStrands.incl((s1, s2))
           newStrands += s1.start -> s2.end
-          for (o <- orangeStrands if (o crosses s1) && (o crosses s2)) {
+          for (o <- orangeStrands if (Strand(o.start, o.start) crosses s1) && (o crosses s2)) {
             if (o.sign == Positive) {
               coefficient *= o.variable
             } else {
@@ -107,6 +107,9 @@ object CATA {
 
   def m2(g: Module.Generator[TypeAA[Set[Strand]],Set[Strand]], r: AMinus.Generator, orangeStrands: Set[VariableStrand]):
   Element[TypeAA[Set[Strand]],Set[Strand]] = {
+    if ((g.label) == Set(Strand(0f, 2f), Strand(1f, 1f)) && r.strands == Set(Strand(2f, 1f), Strand(1f, 0f))) {
+      print("hi")
+    }
     var coefficient = g.module.ring.one
     var newHalfStrands = Set.empty[(Strand, Strand)]
     var newStrands = Set.empty[Strand]
@@ -120,7 +123,7 @@ object CATA {
           }
           newHalfStrands = newHalfStrands.incl((s1, s2))
           newStrands += s1.start -> s2.end
-          for (o <- orangeStrands if (o crosses s1) && (o crosses s2)) {
+          for (o <- orangeStrands if (o crosses s1) && (Strand(o.end, o.end) crosses s2)) {
             if (o.sign == Positive) {
               coefficient *= o.variable
             } else {
