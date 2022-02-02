@@ -19,7 +19,12 @@ trait VariableStrandLike extends DirectedStrandLike {
 }
 
 case class Strand(start: Float, end: Float) extends StrandLike {
-  override def toString: String = start.toString + " -> " + end.toString
+  override def toString: String =
+    if (start % 1 == 0f) {
+      start.round.toString + " -> " + end.round.toString
+    } else {
+      start.toString + " -> " + end.toString
+    }
 }
 
 object Strand {

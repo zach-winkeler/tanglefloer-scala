@@ -35,11 +35,21 @@ object ModuleRenderer {
       innerEdge.edge match {
         case LkDiEdge(source, target, label) => label match {
           case EdgeLabel(left, _, right) =>
+            if (edgeColor(source.value.module, left.factors.length, right.factors.length) == "black") {
               Some((root,
                 DotEdgeStmt(source.toString,
                   target.toString,
                   List(DotAttr("label", label.toString),
-                    DotAttr("color", edgeColor(source.value.module, left.factors.length, right.factors.length))))))
+                    DotAttr("color", edgeColor(source.value.module, left.factors.length, right.factors.length)),
+                    DotAttr("dir", "forward")))))
+            } else {
+              Some((root,
+                DotEdgeStmt(target.toString,
+                  source.toString,
+                  List(DotAttr("label", label.toString),
+                    DotAttr("color", edgeColor(source.value.module, left.factors.length, right.factors.length)),
+                    DotAttr("dir", "back")))))
+            }
           case _ => throw new RuntimeException("did not match an edge label")
         }
         case _ => throw new RuntimeException("did not match an edge")

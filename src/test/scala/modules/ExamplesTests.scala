@@ -4,8 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import algebras.Sign.{Negative, Positive}
 import tangles.ETangle
 import tangles.ETangleType.{Cap, Cup, Straight}
-import modules.TensorProducts.TypeDDTensorProducts
-import modules.TensorProducts.TypeDATensorProducts
+import modules.TensorProducts.{TypeAATensorProducts, TypeADTensorProducts, TypeDATensorProducts, TypeDDTensorProducts}
 import utilities.ModuleRenderer
 
 class ExamplesTests extends AnyFunSuite {
@@ -37,5 +36,18 @@ class ExamplesTests extends AnyFunSuite {
     reflect.io.File("out/straightDD.dot").writeAll(ModuleRenderer.render(straightDD))
     reflect.io.File("out/straightAA.dot").writeAll(ModuleRenderer.render(straightAA))
     reflect.io.File("out/straightDA.dot").writeAll(ModuleRenderer.render(straightDA))
+  }
+
+  test("new examples") {
+    val p = new ETangle(Straight, IndexedSeq(Positive), 0)
+    val pAA = CATA.from(p)
+    val pDD = CDTD.from(p)
+    val pAADDAA = (pAA <*> pDD) <*> pAA
+    reflect.io.File("out/pAA.dot").writeAll(ModuleRenderer.render(pAA))
+    reflect.io.File("out/pAADDAA.dot").writeAll(ModuleRenderer.render(pAADDAA))
+
+    val pp = new ETangle(Straight, IndexedSeq(Positive, Positive), 0)
+    val ppAA = CATA.from(pp)
+    reflect.io.File("out/ppAA.dot").writeAll(ModuleRenderer.render(ppAA))
   }
 }
