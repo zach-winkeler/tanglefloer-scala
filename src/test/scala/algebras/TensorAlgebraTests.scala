@@ -5,7 +5,7 @@ import algebras.TensorAlgebra.{AMinusElementExtensions, AMinusGeneratorExtension
 import org.scalatest.funsuite.AnyFunSuite
 
 class TensorAlgebraTests extends AnyFunSuite {
-  private val A = new AMinus(IndexedSeq(Positive))
+  private val A = new AMinus(IndexedSeq(Set(Positive)))
   private val R = A.ring
   private val TA = new TensorAlgebra(A)
   private val u0 = R("u0")

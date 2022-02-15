@@ -37,6 +37,8 @@ object Reduction {
 
     def isReducibleEdge(e: LkDiEdge[Graph[Generator[TypeDA[L],L],LkDiEdge]#NodeT]): Boolean =
       e match {case LkDiEdge(_, _, EdgeLabel(left, c, right)) =>
-        left.factors(0).isIdempotent && (c == c.ring.one) && right.factors.isEmpty}
+        left.factors(0).isIdempotent && (c == c.ring.one) && right.factors.isEmpty &&
+          (e.from.outgoing.asInstanceOf[Set[LkDiEdge[Graph[Generator[TypeDA[L],L],LkDiEdge]#NodeT]]] &
+            e.to.incoming.asInstanceOf[Set[LkDiEdge[Graph[Generator[TypeDA[L],L],LkDiEdge]#NodeT]]]).size == 1}
   }
 }

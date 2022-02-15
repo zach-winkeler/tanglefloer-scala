@@ -1,7 +1,7 @@
 package algebras
 
 import scala.language.implicitConversions
-import algebras.Sign.{Positive, Sign}
+import algebras.Sign.{Negative, Positive, Sign}
 import scalaz.Scalaz._
 import tangles.{Strand, VariableStrand}
 import tangles.StrandUtils._
@@ -24,16 +24,18 @@ object Sign extends Enumeration {
   implicit def valueToSignVal(x: Value): SignVal = x.asInstanceOf[SignVal]
 }
 
-class AMinus(val signs: IndexedSeq[Sign]) {
+class AMinus(val signs: IndexedSeq[Set[Sign]]) {
   import AMinus._
-  val positives: IndexedSeq[Int] = signs.indicesWhere(_ == Sign.Positive)
+  val positives: IndexedSeq[Int] = signs.indicesWhere(_.contains(Positive))
   val ring = new Z2PolynomialRing(positives.indices.map(i => s"u$i"))
 
   val zero: Element = new Element(this, Map.empty[AMinus.Generator, Z2PolynomialRing.Element])
 
   val orangeStrands: Set[VariableStrand] =
-    signs.indices.map(y => VariableStrand(y+0.5f, y+0.5f, signs(y),
-      if (signs(y) == Positive) ring.vars(positives.indexOf(y)) else ring.zero)).toSet
+    signs.indices.flatMap(y => signs(y).map {
+      case Positive => VariableStrand(y + 0.5f, y + 0.5f, Positive, ring.vars(positives.indexOf(y)))
+      case Negative => VariableStrand(y + 0.5f, y + 0.5f, Negative, ring.zero)
+    }).toSet
 
   def idempotent(occupied: Iterable[Float]): Generator = gen(occupied.map(p => Strand(p, p)).toSet)
   def gen(strands: Set[Strand]): Generator = new AMinus.Generator(this, strands)
@@ -44,9 +46,6 @@ class AMinus(val signs: IndexedSeq[Sign]) {
       (0 until signs.length+1).map(_.toFloat).toSet,
       (0 until signs.length+1).map(_.toFloat).toSet
     ).map(s => gen(s.map(t => Strand(t._1, t._2))))
-
-  def orangeVars: IndexedSeq[Z2PolynomialRing.Element] =
-    signs.view.zipWithIndex.map(si => if (si._1 == Positive) ring.vars(si._2) else ring.zero).toIndexedSeq
 
   def canEqual(other: Any): Boolean = other.isInstanceOf[AMinus]
 

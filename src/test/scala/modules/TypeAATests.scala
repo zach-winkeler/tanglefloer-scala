@@ -7,7 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import utilities.ModuleRenderer
 
 class TypeAATests extends AnyFunSuite {
-  private val A = new AMinus(IndexedSeq(Positive))
+  private val A = new AMinus(IndexedSeq(Set(Positive)))
   private val typeAA = A.asTypeAA
 
   test("type AA") {

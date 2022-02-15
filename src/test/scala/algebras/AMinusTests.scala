@@ -4,7 +4,7 @@ import algebras.Sign.{Negative, Positive}
 import org.scalatest.funsuite.AnyFunSuite
 
 class AMinusTests extends AnyFunSuite {
-  private val A = new AMinus(IndexedSeq(Positive))
+  private val A = new AMinus(IndexedSeq(Set(Positive)))
   private val R = A.ring
   private val u0 = R("u0")
   private val x = A.elt(Set(0f -> 0f, 1f -> 1f))
@@ -19,7 +19,7 @@ class AMinusTests extends AnyFunSuite {
   private val gc = A.gen(Set(1f -> 1f))
   private val ge = A.gen(Set())
 
-  private val B = new AMinus(IndexedSeq(Negative))
+  private val B = new AMinus(IndexedSeq(Set(Negative)))
   private val S = B.ring
   private val xB = B.elt(Set(0f -> 0f, 1f -> 1f))
   private val yB = B.elt(Set(0f -> 1f, 1f -> 0f))

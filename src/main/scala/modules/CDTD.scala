@@ -45,18 +45,13 @@ object CDTD {
     val gens = partialBijections(etangle.leftPoints, etangle.middlePoints).map(pb =>
       pb.map(Strand.fromTuple)).map(strands => result.gen(strands))
 
-    val ignoreOrangeAt = etangle.kind match {
-      case Cup | Cap => Some(etangle.pos + 0.5f)
-      case _ => None
-    }
-
     for (g <- gens) {
       result.addGenerator(g)
     }
     for (g <- gens) {
       result.addStructureMap(g, g.leftIdempotent.toElement <*>: dMinus(g, orangeStrands) :<*> g.rightIdempotent.toElement)
-      result.addStructureMap(g, deltaLeft(g, orangeStrands, ignoreOrangeAt) :<*> g.rightIdempotent.toElement)
-      result.addStructureMap(g, g.leftIdempotent.toElement  <*>: deltaRight(g, orangeStrands, ignoreOrangeAt))
+      result.addStructureMap(g, deltaLeft(g, orangeStrands) :<*> g.rightIdempotent.toElement)
+      result.addStructureMap(g, g.leftIdempotent.toElement  <*>: deltaRight(g, orangeStrands))
     }
     result
   }
@@ -82,8 +77,7 @@ object CDTD {
   }
 
   def deltaLeft(g: Module.Generator[TypeDD[Set[Strand]],Set[Strand]],
-                orangeStrands: Set[VariableStrand],
-                ignoreOrangeAt: Option[Float] = None):
+                orangeStrands: Set[VariableStrand]):
   TensorElement[TypeDD[Set[Strand]],Set[Strand]] = {
     var result: TensorElement[TypeDD[Set[Strand]],Set[Strand]] = (g.module).zero
     val l = g.leftIdempotent
@@ -100,8 +94,7 @@ object CDTD {
       // orange strands
       for (o <- l.algebra.orangeStrands if
         (o endsBetween (s1,s2))
-          && ((o crosses s1) || (o crosses s2))
-          && (ignoreOrangeAt.getOrElse(-1f) != o.end)) {
+          && ((o crosses s1) || (o crosses s2))) {
         if (o.sign == Positive) {
           coefficient *= g.module.leftScalarAction(o.variable)
         } else {
@@ -129,7 +122,7 @@ object CDTD {
         coefficient *= g.module.ring.zero
       }
       // orange strands
-      for (o <- l.algebra.orangeStrands if (o endsBetweenStarts (s1,s2)) && (ignoreOrangeAt.getOrElse(-1f) != o.end)) {
+      for (o <- l.algebra.orangeStrands if (o endsBetweenStarts (s1,s2))) {
         if (o.sign == Positive) {
           coefficient *= g.module.leftScalarAction(o.variable)
         } else {
@@ -160,8 +153,7 @@ object CDTD {
       for (o <- l.algebra.orangeStrands if
         (o endsAbove s1)
           && (o endsBelowStart s2)
-          && (o crosses s1)
-          && (ignoreOrangeAt.getOrElse(-1f) != o.end)) {
+          && (o crosses s1)) {
         if (o.sign == Positive) {
           coefficient *= g.module.leftScalarAction(o.variable)
         } else {
@@ -193,8 +185,7 @@ object CDTD {
       for (o <- l.algebra.orangeStrands if
         (o endsBelow s1)
           && (o endsAboveStart s2)
-          && (o crosses s1)
-          && (ignoreOrangeAt.getOrElse(-1f) != o.end)) {
+          && (o crosses s1)) {
         if (o.sign == Positive) {
           coefficient *= g.module.leftScalarAction(o.variable)
         } else {
@@ -216,8 +207,7 @@ object CDTD {
   }
 
   def deltaRight(g: Module.Generator[TypeDD[Set[Strand]],Set[Strand]],
-                 orangeStrands: Set[VariableStrand],
-                 ignoreOrangeAt: Option[Float] = None):
+                 orangeStrands: Set[VariableStrand]):
   TensorElement[TypeDD[Set[Strand]],Set[Strand]] = {
     var result: TensorElement[TypeDD[Set[Strand]],Set[Strand]] = (g.module).zero
     val r = g.rightIdempotent
@@ -241,8 +231,7 @@ object CDTD {
       }
       for (o <- r.algebra.orangeStrands if
         (o startsBetween (s1, s2))
-          && ((o crosses s1) || (o crosses s2))
-          && (ignoreOrangeAt.getOrElse(-1f) != o.start)) {
+          && ((o crosses s1) || (o crosses s2))) {
         if (o.sign == Positive) {
           coefficient *= g.module.rightScalarAction(o.variable)
         } else {
@@ -271,8 +260,7 @@ object CDTD {
         }
       }
       for (o <- r.algebra.orangeStrands if
-        (o startsBetweenEnds (s1,s2))
-          && (ignoreOrangeAt.getOrElse(-1f) != o.start)) {
+        (o startsBetweenEnds (s1,s2))) {
         if (o.sign == Positive) {
           coefficient *= g.module.rightScalarAction(o.variable)
         } else {
@@ -303,8 +291,7 @@ object CDTD {
       for (o <- r.algebra.orangeStrands if
         (o startsBelowEnd s1)
           && (o startsAbove s2)
-          && (o endsBelow s2)
-          && (ignoreOrangeAt.getOrElse(-1f) != o.start)) {
+          && (o endsBelow s2)) {
         if (o.sign == Positive) {
           coefficient *= g.module.rightScalarAction(o.variable)
         } else {
@@ -329,8 +316,7 @@ object CDTD {
       for (o <- orangeStrands if
         (o startsAbove s1)
           && (o endsAbove s1)
-          && (o endsBelowStart s2)
-          && (ignoreOrangeAt.getOrElse(-1f) != o.start)) {
+          && (o endsBelowStart s2)) {
         if (o.sign == Negative) {
           coefficient *= o.variable
         } else {

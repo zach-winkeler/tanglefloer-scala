@@ -1,6 +1,6 @@
 package tangles
 
-import algebras.Sign.{Positive, Sign}
+import algebras.Sign.{Negative, Positive, Sign}
 import tangles.ETangleType.{Cap, Cup, ETangleType, Over, Straight, Under}
 
 object ETangleType extends Enumeration {
@@ -60,21 +60,26 @@ class ETangle(val kind: ETangleType, val signs: IndexedSeq[Sign], val pos: Int) 
     }
   }
 
-  def leftSigns: IndexedSeq[Sign] = kind match {
-    case Cup => signs.slice(0, pos) ++ signs.slice(pos+2, signs.length)
-    case Under => signs.slice(0, pos) ++: signs(pos+1) +: signs(pos) +: signs.slice(pos+2, signs.length)
-    case _ => signs
+  def leftSigns: IndexedSeq[Set[Sign]] = kind match {
+    case Cup => (signs.slice(0, pos) ++ signs.slice(pos+2, signs.length)).map(Set(_))
+    case Under => (signs.slice(0, pos) ++: signs(pos+1) +: signs(pos) +: signs.slice(pos+2, signs.length)).map(Set(_))
+    case _ => signs.map(Set(_))
   }
 
-  def middleSigns: IndexedSeq[Sign] = kind match {
-    case Cup | Cap => signs.slice(0, pos) ++ IndexedSeq(Positive) ++ signs.slice(pos+2, signs.length)
-    case _ => signs
+  def middleSigns: IndexedSeq[Set[Sign]] = kind match {
+    case Cup => signs.slice(0, pos).map(Set(_)) ++
+      IndexedSeq(Set(Positive, Negative)) ++
+      signs.slice(pos+2, signs.length).map(Set(_))
+    case Cap => signs.slice(0, pos).map(Set(_)) ++
+      IndexedSeq(Set.empty[Sign]) ++
+      signs.slice(pos+2, signs.length).map(Set(_))
+    case _ => signs.map(Set(_))
   }
 
-  def rightSigns: IndexedSeq[Sign] = kind match {
-    case Cap => signs.slice(0, pos) ++ signs.slice(pos+2, signs.length)
-    case Over => signs.slice(0, pos) ++: signs(pos+1) +: signs(pos) +: signs.slice(pos+2, signs.length)
-    case _ => signs
+  def rightSigns: IndexedSeq[Set[Sign]] = kind match {
+    case Cap => (signs.slice(0, pos) ++ signs.slice(pos+2, signs.length)).map(Set(_))
+    case Over => (signs.slice(0, pos) ++: signs(pos+1) +: signs(pos) +: signs.slice(pos+2, signs.length)).map(Set(_))
+    case _ => signs.map(Set(_))
   }
 
   def leftPoints: Set[Float] = (0 until leftSigns.length+1).map(_.toFloat).toSet
