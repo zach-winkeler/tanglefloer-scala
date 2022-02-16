@@ -35,7 +35,7 @@ object TypeAD extends ModuleCompanion {
   override def isIdempotentAction[M <: Module[M, L],L](left: TensorAlgebra.Generator,
                                                        coefficient: Z2PolynomialRing.Element,
                                                        right: TensorAlgebra.Generator): Boolean =
-    (left.factors.length == 1) && (left.factors(0).isIdempotent) && (right.factors(0).isIdempotent)
+    (left.factors.length == 1) && left.factors(0).isIdempotent && right.factors(0).isIdempotent
 
   override def isValidStructureMap[M <: Module[M, L], L](source: Module.TensorGenerator[M, L],
                                                          target: Module.TensorElement[M, L]): Boolean =

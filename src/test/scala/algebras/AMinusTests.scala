@@ -20,7 +20,7 @@ class AMinusTests extends AnyFunSuite {
   private val ge = A.gen(Set())
 
   private val B = new AMinus(IndexedSeq(Set(Negative)))
-  private val S = B.ring
+//  private val S = B.ring
   private val xB = B.elt(Set(0f -> 0f, 1f -> 1f))
   private val yB = B.elt(Set(0f -> 1f, 1f -> 0f))
 

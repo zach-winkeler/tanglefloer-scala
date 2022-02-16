@@ -1,7 +1,7 @@
 package algebras
 
 import algebras.Sign.Positive
-import algebras.TensorAlgebra.{AMinusElementExtensions, AMinusGeneratorExtensions}
+import algebras.TensorAlgebra.AMinusGeneratorExtensions
 import org.scalatest.funsuite.AnyFunSuite
 
 class TensorAlgebraTests extends AnyFunSuite {
@@ -11,7 +11,7 @@ class TensorAlgebraTests extends AnyFunSuite {
   private val u0 = R("u0")
   private val a = A.gen(Set(0f -> 0f))
   private val b = A.gen(Set(0f -> 1f))
-  private val c = A.gen(Set(1f -> 1f))
+//  private val c = A.gen(Set(1f -> 1f))
   private val d = A.gen(Set(1f -> 0f))
   private val da =
     new TensorAlgebra.Element(TA, Map(

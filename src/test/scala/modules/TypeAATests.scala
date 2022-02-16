@@ -1,10 +1,9 @@
 package modules
 
 import algebras.AMinus
-import algebras.Sign.{Negative, Positive}
+import algebras.Sign.Positive
 import modules.TypeAA.AMinusExtensions
 import org.scalatest.funsuite.AnyFunSuite
-import utilities.ModuleRenderer
 
 class TypeAATests extends AnyFunSuite {
   private val A = new AMinus(IndexedSeq(Set(Positive)))

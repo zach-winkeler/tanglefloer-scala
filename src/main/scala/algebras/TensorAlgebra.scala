@@ -20,10 +20,7 @@ class TensorAlgebra(val algebra: AMinus) {
     case _ => false
   }
 
-  override def hashCode(): Int = {
-    val state = Seq(algebra)
-    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
-  }
+  override def hashCode(): Int = Seq(algebra).map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
 }
 
 object TensorAlgebra {

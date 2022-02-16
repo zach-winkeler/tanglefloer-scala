@@ -1,7 +1,7 @@
 package modules
 
 import algebras.{AMinus, TensorAlgebra, Z2PolynomialRing}
-import modules.Module.{Element, Generator}
+import modules.Module.Generator
 import scalax.collection.edge.LkDiEdge
 import scalax.collection.immutable.Graph
 

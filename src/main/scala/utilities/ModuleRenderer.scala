@@ -16,7 +16,7 @@ object ModuleRenderer {
       if (onlyDifferentials) {
         def edgeFilter(p: Param[Generator[M,L],LkDiEdge]): Boolean = p match {
           case innerEdge: Graph[Generator[M,L],LkDiEdge]#EdgeT => innerEdge.edge match {
-            case LkDiEdge (source, _, EdgeLabel(left, coefficient, right)) =>
+            case LkDiEdge (source, _, EdgeLabel(left, _, right)) =>
               edgeColor(source.value.module, left.factors.length, right.factors.length) == "black"
           }
           case _ => true

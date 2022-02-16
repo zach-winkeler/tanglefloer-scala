@@ -70,7 +70,7 @@ object CATA {
       val newStrands = (g.label) -- List(s1, s2) ++ tuple2ToIndexedSeq(uncross(s1, s2))
       result += coefficient *: g.module.asInstanceOf[TypeAA[Set[Strand]]].gen(newStrands).toElement
     }
-    result
+    result.asInstanceOf[Element[TypeAA[Set[Strand]],Set[Strand]]]
   }
 
   def m2(l: AMinus.Generator, g: Module.Generator[TypeAA[Set[Strand]],Set[Strand]], orangeStrands: Set[VariableStrand]):

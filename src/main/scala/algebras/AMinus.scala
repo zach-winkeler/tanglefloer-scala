@@ -35,6 +35,7 @@ class AMinus(val signs: IndexedSeq[Set[Sign]]) {
     signs.indices.flatMap(y => signs(y).map {
       case Positive => VariableStrand(y + 0.5f, y + 0.5f, Positive, ring.vars(positives.indexOf(y)))
       case Negative => VariableStrand(y + 0.5f, y + 0.5f, Negative, ring.zero)
+      case _ => throw new RuntimeException("invalid sign")
     }).toSet
 
   def idempotent(occupied: Iterable[Float]): Generator = gen(occupied.map(p => Strand(p, p)).toSet)
@@ -56,10 +57,7 @@ class AMinus(val signs: IndexedSeq[Set[Sign]]) {
     case _ => false
   }
 
-  override def hashCode(): Int = {
-    val state = Seq(signs)
-    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
-  }
+  override def hashCode(): Int = Seq(signs).map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
 }
 
 object AMinus {

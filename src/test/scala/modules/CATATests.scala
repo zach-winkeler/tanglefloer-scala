@@ -4,7 +4,6 @@ import algebras.Sign.{Negative, Positive}
 import org.scalatest.funsuite.AnyFunSuite
 import tangles.ETangle
 import tangles.ETangleType.{Straight, Cup, Cap}
-import utilities.ModuleRenderer
 
 class CATATests extends AnyFunSuite {
   private val straight = new ETangle(Straight, IndexedSeq(Positive), 0)

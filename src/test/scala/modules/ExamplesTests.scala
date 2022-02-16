@@ -3,8 +3,8 @@ package modules
 import org.scalatest.funsuite.AnyFunSuite
 import algebras.Sign.{Negative, Positive}
 import tangles.ETangle
-import tangles.ETangleType.{Cap, Cup, Over, Straight, Under}
-import modules.TensorProducts.{TypeAATensorProducts, TypeADTensorProducts, TypeDATensorProducts, TypeDDTensorProducts}
+import tangles.ETangleType.{Cap, Cup, Straight}
+import modules.TensorProducts.{TypeDATensorProducts, TypeDDTensorProducts}
 import utilities.ModuleRenderer
 import modules.Reduction.{TypeAAReduction, TypeDAReduction, TypeDDReduction}
 

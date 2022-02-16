@@ -44,7 +44,7 @@ object TypeAA extends ModuleCompanion {
 
   implicit class AMinusExtensions(a: AMinus) {
     def asTypeAA: TypeAA[AMinus.Generator] = {
-      var result = new TypeAA[AMinus.Generator](a.ring, a, a,
+      val result = new TypeAA[AMinus.Generator](a.ring, a, a,
         Z2PolynomialRing.Morphism.identity(a.ring), Z2PolynomialRing.Morphism.identity(a.ring))()
       for (g <- a.gens) {
         result.addGenerator(new Generator[TypeAA[AMinus.Generator],AMinus.Generator](result, g, g.leftIdempotent, g.rightIdempotent))
