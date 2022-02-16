@@ -63,7 +63,10 @@ object CDTD {
          s2 <- (g.label) if (s1 startsBelow s2) && !(s1 crosses s2)) {
       val (newS1, newS2) = cross(s1, s2)
       var coefficient = g.module.ring.one
-      for (o <- orangeStrands if (o crosses newS1) && (o crosses newS2)) {
+      for (b <- (g.label) if (b startsBetween (s1,s2)) && (b endsBetween (s1,s2))) {
+        coefficient *= g.module.ring.zero
+      }
+      for (o <- orangeStrands if (o startsBetween (s1,s2)) && (o endsBetween (s1,s2))) {
         if (o.sign == Negative) {
           coefficient *= o.variable
         } else {

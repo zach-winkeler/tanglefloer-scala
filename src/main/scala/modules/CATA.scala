@@ -63,6 +63,9 @@ object CATA {
     for (s1 <- (g.label);
          s2 <- (g.label) if (s1 startsBelow s2) && (s1 crosses s2)) {
       var coefficient = g.module.ring.one
+      for (b <- (g.label) if (b startsBetween (s1,s2)) && (b endsBetween (s2,s1))) {
+        coefficient *= g.module.ring.zero
+      }
       for (o <- orangeStrands if (o crosses s1) && (o crosses s2)) {
         if (o.sign == Positive) {
           coefficient *= o.variable

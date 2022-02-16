@@ -84,7 +84,10 @@ object AMinus {
       var result = algebra.zero
       for (s1 <- strands; s2 <- strands if (s1 startsBelow s2) && (s1 crosses s2)) {
         var coefficient = algebra.ring.one
-        for (o <- algebra.orangeStrands if (o crosses s1) && (o crosses s2)) {
+        for (b <- strands if (b startsBetween (s1,s2)) && (b endsBetween (s2,s1))) {
+          coefficient *= algebra.ring.zero
+        }
+        for (o <- algebra.orangeStrands if (o startsBetween (s1,s2)) && (o endsBetween (s2,s1))) {
           if (o.sign == Positive) {
             coefficient *= o.variable
           } else {

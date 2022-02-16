@@ -9,9 +9,20 @@ import scalax.collection.edge.LkDiEdge
 import scalax.collection.Graph
 
 object ModuleRenderer {
-  def render[M <: Module[M,L],L](module: Module[M,L], showIdempotents: Boolean = false): String = {
-    val graph: Graph[Generator[M,L],LkDiEdge] =
-      if (!showIdempotents) {
+  def render[M <: Module[M,L],L](module: Module[M,L],
+                                 showIdempotents: Boolean = false,
+                                 onlyDifferentials: Boolean = false): String = {
+    val graph: Graph[Generator[M,L],LkDiEdge] = {
+      if (onlyDifferentials) {
+        def edgeFilter(p: Param[Generator[M,L],LkDiEdge]): Boolean = p match {
+          case innerEdge: Graph[Generator[M,L],LkDiEdge]#EdgeT => innerEdge.edge match {
+            case LkDiEdge (source, _, EdgeLabel(left, coefficient, right)) =>
+              edgeColor(source.value.module, left.factors.length, right.factors.length) == "black"
+          }
+          case _ => true
+        }
+        module.graph.filter(edgeFilter)
+      } else if (!showIdempotents) {
         def edgeFilter(p: Param[Generator[M,L],LkDiEdge]): Boolean = p match {
           case innerEdge: Graph[Generator[M,L],LkDiEdge]#EdgeT => innerEdge.edge match {
             case LkDiEdge (_, _, EdgeLabel(left, coefficient, right)) =>
@@ -23,6 +34,7 @@ object ModuleRenderer {
       } else {
         module.graph
       }
+    }
 
     val root = DotRootGraph (
       directed = true,
