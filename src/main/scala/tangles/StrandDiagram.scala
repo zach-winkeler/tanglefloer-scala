@@ -4,6 +4,7 @@ import scala.language.implicitConversions
 
 import algebras.Sign.Sign
 import algebras.Z2PolynomialRing
+import utilities.IterableUtils._
 
 trait StrandLike {
   def start: Float
@@ -45,10 +46,6 @@ case class VariableStrand(start: Float, end: Float, sign: Sign, variable: Z2Poly
 }
 
 object StrandUtils {
-  def cross(s1: Strand, s2: Strand): (Strand, Strand) = (s1.start -> s2.end, s2.start -> s1.end)
-
-  def uncross(s1: Strand, s2: Strand): (Strand, Strand) = cross(s1, s2)
-
   implicit class StrandExtensions(base: StrandLike) {
     def crosses(other: StrandLike): Boolean = (base.start < other.start) ^ (base.end < other.end)
 
@@ -94,6 +91,25 @@ object StrandUtils {
 
     case class IntStrand(start: Int, end: Int) {
       override def toString: String = start.toString + " -> " + end.toString
+    }
+  }
+
+  implicit class StrandDiagramExtensions(val strands: Set[Strand]) extends AnyVal {
+    def cross(s1: Strand, s2: Strand): Set[Strand] =
+      strands -- List(s1, s2) ++ List(Strand(s1.start, s2.end), Strand(s2.start, s1.end))
+
+    def uncross(s1: Strand, s2: Strand): Set[Strand] = cross(s1, s2)
+  }
+
+  def computeCoefficient(ring: Z2PolynomialRing,
+                          blackStrands: Set[Strand],
+                          orangeStrands: Set[VariableStrand],
+                          pred: StrandLike => Boolean): Z2PolynomialRing.Element = {
+    orangeStrands.view.filter(pred).foldUntil(
+      blackStrands.view.map(_.toVariableStrand(ring.zero)).filter(pred).foldUntil(ring.one)(_ == ring.zero) {
+        (acc, s) => acc * s.variable
+      })(_ == ring.zero) {
+      (acc, s) => acc * s.variable
     }
   }
 }

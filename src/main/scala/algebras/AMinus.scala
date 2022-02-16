@@ -2,11 +2,12 @@ package algebras
 
 import scala.language.implicitConversions
 import algebras.Sign.{Negative, Positive, Sign}
-import tangles.{Strand, VariableStrand}
+import tangles.{Strand, StrandLike, VariableStrand}
 import tangles.StrandUtils._
 import utilities.Functions._
 import utilities.IndexedSeqUtils.IndexedSeqExtensions
 import cats.implicits._
+import utilities.IterableUtils._
 
 object Sign extends Enumeration {
   protected case class SignVal(sign: Int) extends super.Val {
@@ -75,18 +76,12 @@ object AMinus {
       algebra.gen((0 until algebra.signs.length+1).toSet[Int].map(y => Strand(y.toFloat, y.toFloat)) &~ strands)
     }
 
-    def uncrossed(s1: Strand, s2: Strand): Generator =
-      algebra.gen(strands -- List(s1, s2) ++ tuple2ToIndexedSeq(uncross(s1, s2)))
-
     def d: Element = {
       var result = algebra.zero
       for (s1 <- strands; s2 <- strands if (s1 startsBelow s2) && (s1 crosses s2)) {
-        var coefficient = algebra.ring.one
-        for (s <- strands.map(_.toVariableStrand(algebra.ring.zero)) | algebra.orangeStrands
-             if (s startsBetween (s1,s2)) && (s endsBetween (s2,s1))) {
-          coefficient *= s.variable
-        }
-        result += coefficient *: this.uncrossed(s1, s2).toElement
+        val coefficient = computeCoefficient(algebra.ring, strands, algebra.orangeStrands,
+          s => (s startsBetween (s1,s2)) && (s endsBetween (s2,s1)))
+        result += coefficient *: algebra.gen(strands.uncross(s1, s2)).toElement
       }
       result
     }
@@ -105,9 +100,8 @@ object AMinus {
             }
             newHalfStrands = newHalfStrands.incl((s1, s2))
             newStrands += s1.start -> s2.end
-            for (o <- algebra.orangeStrands if (o crosses s1) && (o crosses s2)) {
-              coefficient *= o.variable
-            }
+            coefficient *= computeCoefficient(algebra.ring, Set(), algebra.orangeStrands,
+              o => (o crosses s1) && (o crosses s2))
           case None =>
             coefficient *= algebra.ring.zero
         }
