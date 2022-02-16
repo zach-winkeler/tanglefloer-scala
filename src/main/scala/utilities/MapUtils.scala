@@ -1,7 +1,7 @@
 package utilities
 
 object MapUtils {
-  implicit class MapExtensions[K1,V](m: Map[K1,V]) {
+  implicit class MapExtensions[K1,V](val m: Map[K1,V]) extends AnyVal {
     def mapKeysAndMerge[K2](f: K1 => K2, g: (V, V) => V): Map[K2,V] = {
       var result = Map.empty[K2,V]
       for ((k1, v) <- m) {
@@ -14,5 +14,7 @@ object MapUtils {
       }
       result
     }
+
+    def mapKeys[K2](f: K1 => K2): Map[K2, V] = m.map({ case (a, b) => (f(a), b) })
   }
 }

@@ -1,7 +1,9 @@
 package algebras
 
-import scalaz.Scalaz._
-import scalaz.Semigroup
+import cats.Semigroup
+import cats.implicits._
+
+import utilities.MapUtils._
 
 class TensorAlgebra(val algebra: AMinus) {
   import TensorAlgebra._

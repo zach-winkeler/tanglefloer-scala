@@ -1,8 +1,8 @@
 package algebras
 
-import scalaz.Scalaz._
-import scalaz.Semigroup
 import utilities.MapUtils.MapExtensions
+import cats.Semigroup
+import cats.implicits._
 
 class Z2PolynomialRing(val varNames: IndexedSeq[Object]) {
   val zero: Z2PolynomialRing.Element = new Z2PolynomialRing.Element(this, Set())

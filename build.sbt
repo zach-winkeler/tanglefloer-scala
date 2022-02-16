@@ -7,11 +7,11 @@ lazy val root = (project in file("."))
     name := "tanglefloer-scala"
   )
 
-libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.3.5"
+libraryDependencies += "org.typelevel" %% "cats-core" % "2.7.0"
 
 libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.10"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.10" % "test"
 libraryDependencies += "org.scalatestplus" %% "scalacheck-1-15" % "3.2.10.0" % "test"
 
-libraryDependencies += "org.scala-graph" %% "graph-core" % "1.13.3"
+libraryDependencies += "org.scala-graph" %% "graph-core" % "1.13.4"
 libraryDependencies += "org.scala-graph" %% "graph-dot" % "1.13.3"
