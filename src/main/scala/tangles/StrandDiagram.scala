@@ -25,6 +25,8 @@ case class Strand(start: Float, end: Float) extends StrandLike {
     } else {
       start.toString + " -> " + end.toString
     }
+
+  def toVariableStrand(variable: Z2PolynomialRing.Element): VariableStrand = VariableStrand(start, end, null, variable)
 }
 
 object Strand {

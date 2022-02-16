@@ -63,15 +63,9 @@ object CDTD {
          s2 <- (g.label) if (s1 startsBelow s2) && !(s1 crosses s2)) {
       val (newS1, newS2) = cross(s1, s2)
       var coefficient = g.module.ring.one
-      for (b <- (g.label) if (b startsBetween (s1,s2)) && (b endsBetween (s1,s2))) {
-        coefficient *= g.module.ring.zero
-      }
-      for (o <- orangeStrands if (o startsBetween (s1,s2)) && (o endsBetween (s1,s2))) {
-        if (o.sign == Negative) {
-          coefficient *= o.variable
-        } else {
-          coefficient *= g.module.ring.zero
-        }
+      for (s <- (g.label).map(_.toVariableStrand(g.module.ring.zero)) | orangeStrands
+           if (s startsBetween (s1,s2)) && (s endsBetween (s1,s2))) {
+        coefficient *= s.variable
       }
       val newStrands = (g.label) -- List(s1, s2) ++ List(newS1, newS2)
       result += coefficient *: g.module.asInstanceOf[TypeDD[Set[Strand]]].gen(newStrands).toElement
@@ -87,29 +81,13 @@ object CDTD {
     // case 1
     for (s1 <- l.strands; s2 <- l.strands if (s1 endsBelow s2) && !(s1 crosses s2)) {
       var coefficient = g.module.ring.one
-      // black strands
-      for (b <- l.strands if (b endsBetween (s1,s2)) && ((b crosses s1) || (b crosses s2))) {
-        coefficient *= g.module.ring.zero
+      for (s <- l.strands.map(_.toVariableStrand(l.algebra.ring.zero)) | l.algebra.orangeStrands
+           if (s endsBetween (s1,s2)) && ((s crosses s1) || (s crosses s2))) {
+        coefficient *= g.module.leftScalarAction(s.variable)
       }
-      for (b <- (g.label) if (b startsBetweenEnds (s1, s2))) {
-        coefficient *= g.module.ring.zero
-      }
-      // orange strands
-      for (o <- l.algebra.orangeStrands if
-        (o endsBetween (s1,s2))
-          && ((o crosses s1) || (o crosses s2))) {
-        if (o.sign == Positive) {
-          coefficient *= g.module.leftScalarAction(o.variable)
-        } else {
-          coefficient *= g.module.ring.zero
-        }
-      }
-      for (o <- orangeStrands if o startsBetweenEnds (s1, s2)) {
-        if (o.sign == Negative) {
-          coefficient *= o.variable
-        } else {
-          coefficient *= g.module.ring.zero
-        }
+      for (s <- (g.label).map(_.toVariableStrand(g.module.ring.zero)) | orangeStrands
+           if (s startsBetweenEnds (s1, s2))) {
+        coefficient *= s.variable
       }
       val newLStrands = l.strands -- List(s1, s2) ++ tuple2ToIndexedSeq(cross(s1, s2))
       result += coefficient *: (l.algebra.gen(newLStrands) <*>: g)
@@ -117,27 +95,13 @@ object CDTD {
     // case 2
     for (s1 <- (g.label); s2 <- (g.label) if (s1 startsBelow s2) && (s1 crosses s2)) {
       var coefficient = g.module.ring.one
-      // black strands
-      for (b <- l.strands if b endsBetweenStarts (s1,s2)) {
-        coefficient *= g.module.ring.zero
+      for (s <- l.strands.map(_.toVariableStrand(l.algebra.ring.zero)) | l.algebra.orangeStrands
+           if s endsBetweenStarts (s1,s2)) {
+        coefficient *= g.module.leftScalarAction(s.variable)
       }
-      for (b <- (g.label) if (b startsBetween (s1, s2)) && ((b crosses s1) ^ (b crosses s2))) {
-        coefficient *= g.module.ring.zero
-      }
-      // orange strands
-      for (o <- l.algebra.orangeStrands if (o endsBetweenStarts (s1,s2))) {
-        if (o.sign == Positive) {
-          coefficient *= g.module.leftScalarAction(o.variable)
-        } else {
-          coefficient *= g.module.ring.zero
-        }
-      }
-      for (o <- orangeStrands if (o startsBetween (s1, s2)) && ((o crosses s1) ^ (o crosses s2))) {
-        if (o.sign == Negative) {
-          coefficient *= o.variable
-        } else {
-          coefficient *= g.module.ring.zero
-        }
+      for (s <- (g.label).map(_.toVariableStrand(g.module.ring.zero)) | orangeStrands
+           if (s startsBetween (s1, s2)) && ((s crosses s1) ^ (s crosses s2))) {
+        coefficient *= s.variable
       }
       val newGStrands = (g.label) -- List(s1, s2) ++ tuple2ToIndexedSeq(uncross(s1, s2))
       result += coefficient *: (l <*>: g.module.asInstanceOf[TypeDD[Set[Strand]]].gen(newGStrands))
@@ -145,30 +109,13 @@ object CDTD {
     // case 3
     for (s1 <- l.strands; s2 <- (g.label) if s1 endsBelowStart s2) {
       var coefficient = g.module.ring.one
-      // black strands
-      for (b <- l.strands if (b startsBelow s1) && (b endsAbove s1) && (b endsBelowStart s2)) {
-        coefficient *= g.module.ring.zero
+      for (s <- l.strands.map(_.toVariableStrand(l.algebra.ring.zero)) | l.algebra.orangeStrands
+           if (s startsBelow s1) && (s endsAbove s1) && (s endsBelowStart s2)) {
+        coefficient *= g.module.leftScalarAction(s.variable)
       }
-      for (b <- (g.label) if (b startsAboveEnd s1) && (b startsBelow s2) && (b endsBelow s2)) {
-        coefficient *= g.module.ring.zero
-      }
-      // orange strands
-      for (o <- l.algebra.orangeStrands if
-        (o endsAbove s1)
-          && (o endsBelowStart s2)
-          && (o crosses s1)) {
-        if (o.sign == Positive) {
-          coefficient *= g.module.leftScalarAction(o.variable)
-        } else {
-          coefficient *= g.module.ring.zero
-        }
-      }
-      for (o <- orangeStrands if (o startsAboveEnd s1) && (o startsBelow s2) && !(o crosses s2)) {
-        if (o.sign == Negative) {
-          coefficient *= o.variable
-        } else {
-          coefficient *= g.module.ring.zero
-        }
+      for (s <- (g.label).map(_.toVariableStrand(g.module.ring.zero)) | orangeStrands
+           if (s startsAboveEnd s1) && (s startsBelow s2) && (s endsBelow s2)) {
+        coefficient *= s.variable
       }
       val newLStrands = l.strands - s1 + Strand(s1.start, s2.start)
       val newGStrands = (g.label) - s2 + Strand(s1.end, s2.end)
@@ -178,29 +125,13 @@ object CDTD {
     for (s1 <- l.strands; s2 <- (g.label) if s1 endsAboveStart s2) {
       var coefficient = g.module.ring.one
       // black strands
-      for (b <- l.strands if (b endsBelow s1) && (b endsAboveStart s2) && (b crosses s1)) {
-        coefficient *= g.module.ring.zero
+      for (s <- l.strands.map(_.toVariableStrand(l.algebra.ring.zero)) | l.algebra.orangeStrands
+           if (s endsBelow s1) && (s endsAboveStart s2) && (s crosses s1)) {
+        coefficient *= g.module.leftScalarAction(s.variable)
       }
-      for (b <- (g.label) if (b startsBelowEnd s1) && (b startsAbove s2) && !(b crosses s2)) {
-        coefficient *= g.module.ring.zero
-      }
-      // orange strands
-      for (o <- l.algebra.orangeStrands if
-        (o endsBelow s1)
-          && (o endsAboveStart s2)
-          && (o crosses s1)) {
-        if (o.sign == Positive) {
-          coefficient *= g.module.leftScalarAction(o.variable)
-        } else {
-          coefficient *= g.module.ring.zero
-        }
-      }
-      for (o <- orangeStrands if (o startsBelowEnd s1) && (o startsAbove s2) && !(o crosses s2)) {
-        if (o.sign == Negative) {
-          coefficient *= o.variable
-        } else {
-          coefficient *= g.module.ring.zero
-        }
+      for (s <- (g.label).map(_.toVariableStrand(g.module.ring.zero)) | orangeStrands
+           if (s startsBelowEnd s1) && (s startsAbove s2) && !(s crosses s2)) {
+        coefficient *= s.variable
       }
       val newLStrands = l.strands - s1 + Strand(s1.start, s2.start)
       val newGStrands = (g.label) - s2 + Strand(s1.end, s2.end)
@@ -217,29 +148,13 @@ object CDTD {
     // case 1
     for (s1 <- (r.strands); s2 <- (r.strands) if (s1 startsBelow s2) && !(s1 crosses s2)) {
       var coefficient = g.module.ring.one
-      // black strands
-      for (b <- (g.label) if b endsBetweenStarts (s1,s2)) {
-        coefficient *= g.module.ring.zero
+      for (s <- (g.label).map(_.toVariableStrand(g.module.ring.zero)) | orangeStrands
+           if s endsBetweenStarts (s1,s2)) {
+        coefficient *= s.variable
       }
-      for (b <- r.strands if (b startsBetween (s1, s2)) && ((b crosses s1) || (b crosses s2))) {
-        coefficient *= g.module.ring.zero
-      }
-      // orange strands
-      for (o <- orangeStrands if o endsBetweenStarts (s1,s2)) {
-        if (o.sign == Negative) {
-          coefficient *= o.variable
-        } else {
-          coefficient *= g.module.ring.zero
-        }
-      }
-      for (o <- r.algebra.orangeStrands if
-        (o startsBetween (s1, s2))
-          && ((o crosses s1) || (o crosses s2))) {
-        if (o.sign == Positive) {
-          coefficient *= g.module.rightScalarAction(o.variable)
-        } else {
-          coefficient *= g.module.ring.zero
-        }
+      for (s <- r.strands.map(_.toVariableStrand(r.algebra.ring.zero)) | r.algebra.orangeStrands
+           if (s startsBetween (s1, s2)) && ((s crosses s1) || (s crosses s2))) {
+        coefficient *= g.module.rightScalarAction(s.variable)
       }
       val newRStrands = r.strands -- List(s1, s2) ++ tuple2ToIndexedSeq(cross(s1, s2))
       result += coefficient *: (g :<*> r.algebra.gen(newRStrands))
@@ -247,28 +162,13 @@ object CDTD {
     // case 2
     for (s1 <- (g.label); s2 <- (g.label) if (s1 endsBelow s2) && (s1 crosses s2)) {
       var coefficient = g.module.ring.one
-      // black strands
-      for (b <- (g.label) if (b endsBetween (s1,s2)) && ((b crosses s1) ^ (b crosses s2))) {
-        coefficient *= g.module.ring.zero
+      for (s <- (g.label).map(_.toVariableStrand(g.module.ring.zero)) | orangeStrands
+           if (s endsBetween (s1,s2)) && ((s crosses s1) ^ (s crosses s2))) {
+        coefficient *= s.variable
       }
-      for (b <- r.strands if b startsBetweenEnds (s1,s2)) {
-        coefficient *= g.module.ring.zero
-      }
-      // orange strands
-      for (o <- orangeStrands if (o endsBetween (s1,s2)) && ((o crosses s1) ^ (o crosses s2))) {
-        if (o.sign == Negative) {
-          coefficient *= o.variable
-        } else {
-          coefficient *= g.module.ring.zero
-        }
-      }
-      for (o <- r.algebra.orangeStrands if
-        (o startsBetweenEnds (s1,s2))) {
-        if (o.sign == Positive) {
-          coefficient *= g.module.rightScalarAction(o.variable)
-        } else {
-          coefficient *= g.module.ring.zero
-        }
+      for (s <- r.strands.map(_.toVariableStrand(r.algebra.ring.zero)) | r.algebra.orangeStrands
+           if s startsBetweenEnds (s1,s2)) {
+        coefficient *= g.module.rightScalarAction(s.variable)
       }
       val newGStrands = (g.label) -- List(s1, s2) ++ tuple2ToIndexedSeq(uncross(s1, s2))
       result += coefficient *: (g.module.asInstanceOf[TypeDD[Set[Strand]]].gen(newGStrands) :<*> r)
@@ -276,30 +176,13 @@ object CDTD {
     // case 3
     for (s1 <- (g.label); s2 <- r.strands if s1 endsAboveStart s2) {
       var coefficient = g.module.ring.one
-      // black strands
-      for (b <- (g.label) if (b startsBelow s1) && (b endsBelow s1) && (b endsAboveStart s2)) {
+      for (s <- (g.label).map(_.toVariableStrand(g.module.ring.zero)) | orangeStrands
+           if (s startsBelow s1) && (s endsBelow s1) && (s endsAboveStart s2)) {
         coefficient *= g.module.ring.zero
       }
-      for (b <- r.strands if (b startsBelowEnd s1) && (b startsAbove s2) && (b endsBelow s2)) {
-        coefficient *= g.module.ring.zero
-      }
-      // orange strands
-      for (o <- orangeStrands if (o startsBelow s1) && (o endsBelow s1) && (o endsAboveStart s2)) {
-        if (o.sign == Negative) {
-          coefficient *= o.variable
-        } else {
-          coefficient *= g.module.ring.zero
-        }
-      }
-      for (o <- r.algebra.orangeStrands if
-        (o startsBelowEnd s1)
-          && (o startsAbove s2)
-          && (o endsBelow s2)) {
-        if (o.sign == Positive) {
-          coefficient *= g.module.rightScalarAction(o.variable)
-        } else {
-          coefficient *= g.module.ring.zero
-        }
+      for (s <- r.strands.map(_.toVariableStrand(r.algebra.ring.zero)) | r.algebra.orangeStrands
+           if (s startsBelowEnd s1) && (s startsAbove s2) && (s endsBelow s2)) {
+        coefficient *= g.module.rightScalarAction(s.variable)
       }
       val newGStrands = (g.label) - s1 + Strand(s1.start, s2.start)
       val newRStrands = r.strands - s2 + Strand(s1.end, s2.end)
@@ -309,29 +192,13 @@ object CDTD {
     for (s1 <- (g.label); s2 <- r.strands if s1 endsBelowStart s2) {
       var coefficient = g.module.ring.one
       // black strands
-      for (b <- (g.label) if (b startsAbove s1) && (b endsAbove s1) && (b endsBelowStart s2)) {
-        coefficient *= g.module.ring.zero
+      for (s <- (g.label).map(_.toVariableStrand(g.module.ring.zero)) | orangeStrands
+           if (s startsAbove s1) && (s endsAbove s1) && (s endsBelowStart s2)) {
+        coefficient *= s.variable
       }
-      for (b <- r.strands if (b startsAboveEnd s1) && (b startsBelow s2) && (b endsAbove s2)) {
-        coefficient *= g.module.ring.zero
-      }
-      // orange strands
-      for (o <- orangeStrands if
-        (o startsAbove s1)
-          && (o endsAbove s1)
-          && (o endsBelowStart s2)) {
-        if (o.sign == Negative) {
-          coefficient *= o.variable
-        } else {
-          coefficient *= g.module.ring.zero
-        }
-      }
-      for (o <- r.algebra.orangeStrands if (o startsAboveEnd s1) && (o startsBelow s2) && (o endsAbove s2)) {
-        if (o.sign == Positive) {
-          coefficient *= g.module.rightScalarAction(o.variable)
-        } else {
-          coefficient *= g.module.ring.zero
-        }
+      for (s <- r.strands.map(_.toVariableStrand(r.algebra.ring.zero)) | r.algebra.orangeStrands
+           if (s startsAboveEnd s1) && (s startsBelow s2) && (s endsAbove s2)) {
+        coefficient *= g.module.rightScalarAction(s.variable)
       }
       val newGStrands = (g.label) - s1 + Strand(s1.start, s2.start)
       val newRStrands = r.strands - s2 + Strand(s1.end, s2.end)

@@ -84,15 +84,9 @@ object AMinus {
       var result = algebra.zero
       for (s1 <- strands; s2 <- strands if (s1 startsBelow s2) && (s1 crosses s2)) {
         var coefficient = algebra.ring.one
-        for (b <- strands if (b startsBetween (s1,s2)) && (b endsBetween (s2,s1))) {
-          coefficient *= algebra.ring.zero
-        }
-        for (o <- algebra.orangeStrands if (o startsBetween (s1,s2)) && (o endsBetween (s2,s1))) {
-          if (o.sign == Positive) {
-            coefficient *= o.variable
-          } else {
-            coefficient *= algebra.ring.zero
-          }
+        for (s <- strands.map(_.toVariableStrand(algebra.ring.zero)) | algebra.orangeStrands
+             if (s startsBetween (s1,s2)) && (s endsBetween (s2,s1))) {
+          coefficient *= s.variable
         }
         result += coefficient *: this.uncrossed(s1, s2).toElement
       }
@@ -114,11 +108,7 @@ object AMinus {
             newHalfStrands = newHalfStrands.incl((s1, s2))
             newStrands += s1.start -> s2.end
             for (o <- algebra.orangeStrands if (o crosses s1) && (o crosses s2)) {
-              if (o.sign == Positive) {
-                coefficient *= o.variable
-              } else {
-                coefficient *= algebra.ring.zero
-              }
+              coefficient *= o.variable
             }
           case None =>
             coefficient *= algebra.ring.zero

@@ -63,15 +63,9 @@ object CATA {
     for (s1 <- (g.label);
          s2 <- (g.label) if (s1 startsBelow s2) && (s1 crosses s2)) {
       var coefficient = g.module.ring.one
-      for (b <- (g.label) if (b startsBetween (s1,s2)) && (b endsBetween (s2,s1))) {
-        coefficient *= g.module.ring.zero
-      }
-      for (o <- orangeStrands if (o crosses s1) && (o crosses s2)) {
-        if (o.sign == Positive) {
-          coefficient *= o.variable
-        } else {
-          coefficient *= g.module.ring.zero
-        }
+      for (s <- (g.label).map(_.toVariableStrand(g.module.ring.zero)) | orangeStrands
+           if (s startsBetween (s1,s2)) && (s endsBetween (s2,s1))) {
+        coefficient *= s.variable
       }
       val newStrands = (g.label) -- List(s1, s2) ++ tuple2ToIndexedSeq(uncross(s1, s2))
       result += coefficient *: g.module.asInstanceOf[TypeAA[Set[Strand]]].gen(newStrands).toElement
@@ -95,11 +89,7 @@ object CATA {
           newHalfStrands = newHalfStrands.incl((s1, s2))
           newStrands += s1.start -> s2.end
           for (o <- orangeStrands if (Strand(o.start, o.start) crosses s1) && (o crosses s2)) {
-            if (o.sign == Positive) {
-              coefficient *= o.variable
-            } else {
-              coefficient *= g.module.ring.zero
-            }
+            coefficient *= o.variable
           }
         case None =>
           coefficient *= g.module.ring.zero
@@ -124,11 +114,7 @@ object CATA {
           newHalfStrands = newHalfStrands.incl((s1, s2))
           newStrands += s1.start -> s2.end
           for (o <- orangeStrands if (o crosses s1) && (Strand(o.end, o.end) crosses s2)) {
-            if (o.sign == Positive) {
-              coefficient *= o.variable
-            } else {
-              coefficient *= g.module.ring.zero
-            }
+            coefficient *= o.variable
           }
         case None =>
           coefficient *= g.module.ring.zero
