@@ -6,7 +6,7 @@ import modules.TensorProducts.TypeDDTensorProducts
 import org.scalatest.Outcome
 import org.scalatest.funsuite.AnyFunSuite
 import tangles.{ETangle, Strand}
-import tangles.ETangleType.Straight
+import tangles.ETangleType.{Straight, Cup}
 
 class TimingTests extends AnyFunSuite {
   private var t: ETangle = null

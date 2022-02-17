@@ -7,7 +7,7 @@ import modules.Module.{Element, Generator}
 import tangles.StrandUtils._
 import tangles.PartialBijectionUtils._
 import tangles.{ETangle, Strand, VariableStrand}
-import utilities.Functions.{partialBijections, tuple2ToIndexedSeq}
+import utilities.Functions.partialBijections
 
 object CATA {
   implicit class TypeAAExtensions(module: TypeAA[Set[Strand]]) {
@@ -21,7 +21,7 @@ object CATA {
     val leftAlgebra = new AMinus(etangle.middleSigns)
     val rightAlgebra = new AMinus(etangle.rightSigns)
     val rightScalarAction = new Z2PolynomialRing.Morphism(rightAlgebra.ring, leftAlgebra.ring,
-      (for (o <- etangle.rightStrands.filter(_.sign == Positive)) yield
+      (for (o <- etangle.rightStrands if o.sign == Positive) yield
         (s"u${rightAlgebra.positives.indexOf(o.end.toInt)}"
           -> s"u${leftAlgebra.positives.indexOf(o.start.toInt)}")).toMap
     )
@@ -62,7 +62,7 @@ object CATA {
     var result = g.module.zero
     for (s1 <- (g.label);
          s2 <- (g.label) if (s1 startsBelow s2) && (s1 crosses s2)) {
-      var coefficient = computeCoefficient(g.module.ring, g.label, orangeStrands,
+      val coefficient = computeCoefficient(g.module.ring, g.label, orangeStrands,
         s => (s startsBetween (s1,s2)) && (s endsBetween (s2,s1)))
       val newStrands = (g.label).uncross(s1, s2)
       result += coefficient *: g.module.asInstanceOf[TypeAA[Set[Strand]]].gen(newStrands).toElement

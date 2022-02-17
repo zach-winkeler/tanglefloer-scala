@@ -67,6 +67,33 @@ abstract class Module[M <: Module[M, L], L]
     }
     graph = newGraph
   }
+
+  def summands: Seq[M] =
+    this.graph.componentTraverser().map(comp =>
+      buildModule(ring, leftAlgebra, rightAlgebra, leftScalarAction, rightScalarAction)(
+        leftTensorAlgebra, rightTensorAlgebra, comp.to(Graph))).toSeq
+
+  def canEqual(other: Any): Boolean = other.isInstanceOf[Module[M, L]]
+
+  override def equals(other: Any): Boolean = other match {
+    case that: Module[M, L] =>
+      (that canEqual this) &&
+        ring == that.ring &&
+        leftAlgebra == that.leftAlgebra &&
+        rightAlgebra == that.rightAlgebra &&
+        leftScalarAction == that.leftScalarAction &&
+        rightScalarAction == that.rightScalarAction &&
+        leftTensorAlgebra == that.leftTensorAlgebra &&
+        rightTensorAlgebra == that.rightTensorAlgebra &&
+        graph == that.graph
+    case _ => false
+  }
+
+  override def hashCode(): Int = {
+    val state = Seq(ring, leftAlgebra, rightAlgebra, leftScalarAction, rightScalarAction,
+      leftTensorAlgebra, rightTensorAlgebra, graph)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  }
 }
 
 trait ModuleCompanion {
@@ -82,6 +109,15 @@ trait ModuleCompanion {
 }
 
 object Module {
+  def directSum[M <: Module[M, L], L](summands: Seq[Module[M, L]]): M =
+    if (summands.isEmpty) {
+      throw new RuntimeException("empty direct sum not implemented")
+    } else {
+      val m = summands.head
+      m.buildModule(m.ring, m.leftAlgebra, m.rightAlgebra, m.leftScalarAction, m.rightScalarAction)(
+        m.leftTensorAlgebra, m.rightTensorAlgebra, summands.view.map(_.graph).fold(Graph.empty) {_.union(_)})
+    }
+
   class TensorGenerator[M <: Module[M, L], L](val module: Module[M, L], val label: L, val leftIdempotent: AMinus.Generator, val rightIdempotent: AMinus.Generator, val left: TensorAlgebra.Generator, val right: TensorAlgebra.Generator) {
     def toElement: TensorElement[M, L] = new TensorElement(module, Map(this -> module.ring.one))
 

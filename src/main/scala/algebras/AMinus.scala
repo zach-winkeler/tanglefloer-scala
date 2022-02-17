@@ -2,12 +2,11 @@ package algebras
 
 import scala.language.implicitConversions
 import algebras.Sign.{Negative, Positive, Sign}
-import tangles.{Strand, StrandLike, VariableStrand}
+import tangles.{Strand, VariableStrand}
 import tangles.StrandUtils._
 import utilities.Functions._
 import utilities.IndexedSeqUtils.IndexedSeqExtensions
 import cats.implicits._
-import utilities.IterableUtils._
 
 object Sign extends Enumeration {
   protected case class SignVal(sign: Int) extends super.Val {

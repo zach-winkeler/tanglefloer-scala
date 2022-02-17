@@ -1,16 +1,15 @@
 package modules
 
-import scala.language.implicitConversions
-import algebras.Sign.{Negative, Positive}
-import algebras.TensorAlgebra.AMinusGeneratorExtensions
+import algebras.Sign.Negative
 import algebras.{AMinus, Z2PolynomialRing}
 import modules.Module.{Element, Generator, TensorElement}
-import tangles.ETangleType.{Cup, Cap}
-import tangles.StrandUtils._
 import tangles.PartialBijectionUtils._
+import tangles.StrandUtils._
 import tangles.{ETangle, Strand, VariableStrand}
-import utilities.Functions.{partialBijections, tuple2ToIndexedSeq}
+import utilities.Functions.partialBijections
 import utilities.IndexedSeqUtils.IndexedSeqExtensions
+
+import scala.language.implicitConversions
 
 object CDTD {
   implicit class TypeDDExtensions(module: TypeDD[Set[Strand]]) {
@@ -61,7 +60,7 @@ object CDTD {
     var result = (g.module).zero
     for (s1 <- (g.label);
          s2 <- (g.label) if (s1 startsBelow s2) && !(s1 crosses s2)) {
-      var coefficient = computeCoefficient(g.module.ring, g.label, orangeStrands,
+      val coefficient = computeCoefficient(g.module.ring, g.label, orangeStrands,
         s => (s startsBetween (s1,s2)) && (s endsBetween (s1,s2)))
       val newStrands = (g.label).cross(s1, s2)
       result += coefficient *: g.module.asInstanceOf[TypeDD[Set[Strand]]].gen(newStrands).toElement

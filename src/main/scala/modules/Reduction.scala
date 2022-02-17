@@ -9,6 +9,7 @@ abstract class Reducible[M <: Module[M, L], L](base: M) {
   def reduce(): Unit = {
     var eOpt = getReducibleEdge
     while (eOpt.nonEmpty) {
+      print(s"Reducing... Nodes: ${base.graph.nodes.size}, Edges: ${base.graph.edges.size}\n")
       reduceEdge(eOpt.get)
       eOpt = getReducibleEdge
     }
