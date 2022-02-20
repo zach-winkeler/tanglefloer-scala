@@ -3,28 +3,28 @@ package utilities
 import scalax.collection.io.dot._
 import implicits._
 import modules.{Module, TypeAA, TypeDA, TypeDD}
-import modules.Module.{EdgeLabel, Generator}
+import modules.Module.{EdgeLabel, Generator, NodeLabel}
 import scalax.collection.GraphPredef.Param
 import scalax.collection.edge.LkDiEdge
 import scalax.collection.Graph
 
 object ModuleRenderer {
-  def render[M <: Module[M,L],L](module: Module[M,L],
+  def render[M <: Module[M,K],K](module: Module[M,K],
                                  showIdempotents: Boolean = false,
                                  onlyDifferentials: Boolean = false): String = {
-    val graph: Graph[Generator[M,L],LkDiEdge] = {
+    val graph: Graph[NodeLabel[K],LkDiEdge] = {
       if (onlyDifferentials) {
-        def edgeFilter(p: Param[Generator[M,L],LkDiEdge]): Boolean = p match {
-          case innerEdge: Graph[Generator[M,L],LkDiEdge]#EdgeT => innerEdge.edge match {
-            case LkDiEdge (source, _, EdgeLabel(left, _, right)) =>
-              edgeColor(source.value.module, left.factors.length, right.factors.length) == "black"
+        def edgeFilter(p: Param[NodeLabel[K],LkDiEdge]): Boolean = p match {
+          case innerEdge: Graph[NodeLabel[K],LkDiEdge]#EdgeT => innerEdge.edge match {
+            case LkDiEdge (_, _, EdgeLabel(left, _, right)) =>
+              edgeColor(module, left.factors.length, right.factors.length) == "black"
           }
           case _ => true
         }
         module.graph.filter(edgeFilter)
       } else if (!showIdempotents) {
-        def edgeFilter(p: Param[Generator[M,L],LkDiEdge]): Boolean = p match {
-          case innerEdge: Graph[Generator[M,L],LkDiEdge]#EdgeT => innerEdge.edge match {
+        def edgeFilter(p: Param[NodeLabel[K],LkDiEdge]): Boolean = p match {
+          case innerEdge: Graph[NodeLabel[K],LkDiEdge]#EdgeT => innerEdge.edge match {
             case LkDiEdge (_, _, EdgeLabel(left, coefficient, right)) =>
               !module.companion.isIdempotentAction(left, coefficient, right)
           }
@@ -43,23 +43,23 @@ object ModuleRenderer {
       attrList  = List()
     )
 
-    def edgeTransformer(innerEdge: Graph[Generator[M,L],LkDiEdge]#EdgeT): Option[(DotGraph,DotEdgeStmt)] = {
+    def edgeTransformer(innerEdge: Graph[NodeLabel[K],LkDiEdge]#EdgeT): Option[(DotGraph,DotEdgeStmt)] = {
       innerEdge.edge match {
         case LkDiEdge(source, target, label) => label match {
           case EdgeLabel(left, _, right) =>
-            if (edgeColor(source.value.module, left.factors.length, right.factors.length) == "black") {
+            if (edgeColor(module, left.factors.length, right.factors.length) == "black") {
               Some((root,
                 DotEdgeStmt(source.toString,
                   target.toString,
                   List(DotAttr("label", label.toString),
-                    DotAttr("color", edgeColor(source.value.module, left.factors.length, right.factors.length)),
+                    DotAttr("color", edgeColor(module, left.factors.length, right.factors.length)),
                     DotAttr("dir", "forward")))))
             } else {
               Some((root,
                 DotEdgeStmt(target.toString,
                   source.toString,
                   List(DotAttr("label", label.toString),
-                    DotAttr("color", edgeColor(source.value.module, left.factors.length, right.factors.length)),
+                    DotAttr("color", edgeColor(module, left.factors.length, right.factors.length)),
                     DotAttr("dir", "back")))))
             }
           case _ => throw new RuntimeException("did not match an edge label")
@@ -68,7 +68,7 @@ object ModuleRenderer {
       }
     }
 
-    def nodeTransformer(innerNode: Graph[Generator[M,L],LkDiEdge]#NodeT): Option[(DotGraph, DotNodeStmt)] =
+    def nodeTransformer(innerNode: Graph[NodeLabel[K],LkDiEdge]#NodeT): Option[(DotGraph, DotNodeStmt)] =
       Some((root, DotNodeStmt(NodeId(innerNode.value.toString), Seq.empty[DotAttr])))
 
     graph.toDot(root, edgeTransformer, iNodeTransformer=Some(nodeTransformer))

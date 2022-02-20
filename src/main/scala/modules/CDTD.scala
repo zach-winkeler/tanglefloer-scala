@@ -13,7 +13,7 @@ import scala.language.implicitConversions
 
 object CDTD {
   implicit class TypeDDExtensions(module: TypeDD[Set[Strand]]) {
-    def gen(strands: Set[Strand]): Generator[TypeDD[Set[Strand]], Set[Strand]] = {
+    def ddGen(strands: Set[Strand]): Generator[TypeDD[Set[Strand]], Set[Strand]] = {
       new Generator[TypeDD[Set[Strand]],Set[Strand]](module, strands,
         module.leftAlgebra.gen(strands.sourceId).complement, module.rightAlgebra.gen(strands.targetId).complement)
     }
@@ -42,10 +42,10 @@ object CDTD {
     )).toSet
 
     val gens = partialBijections(etangle.leftPoints, etangle.middlePoints).map(pb =>
-      pb.map(Strand.fromTuple)).map(strands => result.gen(strands))
+      pb.map(Strand.fromTuple)).map(strands => result.ddGen(strands))
 
     for (g <- gens) {
-      result.addGenerator(g)
+      result.addGenerator(g.label)
     }
     for (g <- gens) {
       result.addStructureMap(g, g.leftIdempotent.toElement <*>: dMinus(g, orangeStrands) :<*> g.rightIdempotent.toElement)
@@ -58,12 +58,12 @@ object CDTD {
   def dMinus(g: Module.Generator[TypeDD[Set[Strand]],Set[Strand]], orangeStrands: Set[VariableStrand]):
   Element[TypeDD[Set[Strand]],Set[Strand]] = {
     var result = (g.module).zero
-    for (s1 <- (g.label);
-         s2 <- (g.label) if (s1 startsBelow s2) && !(s1 crosses s2)) {
-      val coefficient = computeCoefficient(g.module.ring, g.label, orangeStrands,
+    for (s1 <- (g.key);
+         s2 <- (g.key) if (s1 startsBelow s2) && !(s1 crosses s2)) {
+      val coefficient = computeCoefficient(g.module.ring, g.key, orangeStrands,
         s => (s startsBetween (s1,s2)) && (s endsBetween (s1,s2)))
-      val newStrands = (g.label).cross(s1, s2)
-      result += coefficient *: g.module.asInstanceOf[TypeDD[Set[Strand]]].gen(newStrands).toElement
+      val newStrands = (g.key).cross(s1, s2)
+      result += coefficient *: g.module.asInstanceOf[TypeDD[Set[Strand]]].ddGen(newStrands).toElement
     }
     result
   }
@@ -78,42 +78,42 @@ object CDTD {
       var coefficient = g.module.ring.one
       coefficient *= g.module.leftScalarAction(computeCoefficient(l.algebra.ring, l.strands, l.algebra.orangeStrands,
         s => (s endsBetween (s1,s2)) && ((s crosses s1) || (s crosses s2))))
-      coefficient *= computeCoefficient(g.module.ring, g.label, orangeStrands,
+      coefficient *= computeCoefficient(g.module.ring, g.key, orangeStrands,
         s => s startsBetweenEnds (s1, s2))
       val newLStrands = l.strands.cross(s1, s2)
       result += coefficient *: (l.algebra.gen(newLStrands) <*>: g)
     }
     // case 2
-    for (s1 <- (g.label); s2 <- (g.label) if (s1 startsBelow s2) && (s1 crosses s2)) {
+    for (s1 <- (g.key); s2 <- (g.key) if (s1 startsBelow s2) && (s1 crosses s2)) {
       var coefficient = g.module.ring.one
       coefficient *= g.module.leftScalarAction(computeCoefficient(l.algebra.ring, l.strands, l.algebra.orangeStrands,
         s => s endsBetweenStarts (s1,s2)))
-      coefficient *= computeCoefficient(g.module.ring, g.label, orangeStrands,
+      coefficient *= computeCoefficient(g.module.ring, g.key, orangeStrands,
         s => (s startsBetween (s1, s2)) && ((s crosses s1) ^ (s crosses s2)))
-      val newGStrands = (g.label).uncross(s1, s2)
-      result += coefficient *: (l <*>: g.module.asInstanceOf[TypeDD[Set[Strand]]].gen(newGStrands))
+      val newGStrands = (g.key).uncross(s1, s2)
+      result += coefficient *: (l <*>: g.module.asInstanceOf[TypeDD[Set[Strand]]].ddGen(newGStrands))
     }
     // case 3
-    for (s1 <- l.strands; s2 <- (g.label) if s1 endsBelowStart s2) {
+    for (s1 <- l.strands; s2 <- (g.key) if s1 endsBelowStart s2) {
       var coefficient = g.module.ring.one
       coefficient *= g.module.leftScalarAction(computeCoefficient(l.algebra.ring, l.strands, l.algebra.orangeStrands,
         s => (s startsBelow s1) && (s endsAbove s1) && (s endsBelowStart s2)))
-      coefficient *= computeCoefficient(g.module.ring, g.label, orangeStrands,
+      coefficient *= computeCoefficient(g.module.ring, g.key, orangeStrands,
         s => (s startsAboveEnd s1) && (s startsBelow s2) && (s endsBelow s2))
       val newLStrands = l.strands - s1 + Strand(s1.start, s2.start)
-      val newGStrands = (g.label) - s2 + Strand(s1.end, s2.end)
-      result += coefficient *: (l.algebra.gen(newLStrands) <*>: g.module.asInstanceOf[TypeDD[Set[Strand]]].gen(newGStrands))
+      val newGStrands = (g.key) - s2 + Strand(s1.end, s2.end)
+      result += coefficient *: (l.algebra.gen(newLStrands) <*>: g.module.asInstanceOf[TypeDD[Set[Strand]]].ddGen(newGStrands))
     }
     // case 4
-    for (s1 <- l.strands; s2 <- (g.label) if s1 endsAboveStart s2) {
+    for (s1 <- l.strands; s2 <- (g.key) if s1 endsAboveStart s2) {
       var coefficient = g.module.ring.one
       coefficient *= g.module.leftScalarAction(computeCoefficient(l.algebra.ring, l.strands, l.algebra.orangeStrands,
         s => (s endsBelow s1) && (s endsAboveStart s2) && (s crosses s1)))
-      coefficient *= computeCoefficient(g.module.ring, g.label, orangeStrands,
+      coefficient *= computeCoefficient(g.module.ring, g.key, orangeStrands,
         s => (s startsBelowEnd s1) && (s startsAbove s2) && !(s crosses s2))
       val newLStrands = l.strands - s1 + Strand(s1.start, s2.start)
-      val newGStrands = (g.label) - s2 + Strand(s1.end, s2.end)
-      result += coefficient *: (l.algebra.gen(newLStrands) <*>: g.module.asInstanceOf[TypeDD[Set[Strand]]].gen(newGStrands))
+      val newGStrands = (g.key) - s2 + Strand(s1.end, s2.end)
+      result += coefficient *: (l.algebra.gen(newLStrands) <*>: g.module.asInstanceOf[TypeDD[Set[Strand]]].ddGen(newGStrands))
     }
     result
   }
@@ -126,7 +126,7 @@ object CDTD {
     // case 1
     for (s1 <- (r.strands); s2 <- (r.strands) if (s1 startsBelow s2) && !(s1 crosses s2)) {
       var coefficient = g.module.ring.one
-      coefficient *= computeCoefficient(g.module.ring, g.label, orangeStrands,
+      coefficient *= computeCoefficient(g.module.ring, g.key, orangeStrands,
         s => s endsBetweenStarts (s1, s2))
       coefficient *= g.module.rightScalarAction(computeCoefficient(r.algebra.ring, r.strands, r.algebra.orangeStrands,
         s => (s startsBetween (s1, s2)) && ((s crosses s1) || (s crosses s2))))
@@ -134,36 +134,36 @@ object CDTD {
       result += coefficient *: (g :<*> r.algebra.gen(newRStrands))
     }
     // case 2
-    for (s1 <- (g.label); s2 <- (g.label) if (s1 endsBelow s2) && (s1 crosses s2)) {
+    for (s1 <- (g.key); s2 <- (g.key) if (s1 endsBelow s2) && (s1 crosses s2)) {
       var coefficient = g.module.ring.one
-      coefficient *= computeCoefficient(g.module.ring, g.label, orangeStrands,
+      coefficient *= computeCoefficient(g.module.ring, g.key, orangeStrands,
         s => (s endsBetween (s1,s2)) && ((s crosses s1) ^ (s crosses s2)))
       coefficient *= g.module.rightScalarAction(computeCoefficient(r.algebra.ring, r.strands, r.algebra.orangeStrands,
         s => s startsBetweenEnds (s1,s2)))
-      val newGStrands = (g.label).uncross(s1, s2)
-      result += coefficient *: (g.module.asInstanceOf[TypeDD[Set[Strand]]].gen(newGStrands) :<*> r)
+      val newGStrands = (g.key).uncross(s1, s2)
+      result += coefficient *: (g.module.asInstanceOf[TypeDD[Set[Strand]]].ddGen(newGStrands) :<*> r)
     }
     // case 3
-    for (s1 <- (g.label); s2 <- r.strands if s1 endsAboveStart s2) {
+    for (s1 <- (g.key); s2 <- r.strands if s1 endsAboveStart s2) {
       var coefficient = g.module.ring.one
-      coefficient *= computeCoefficient(g.module.ring, g.label, orangeStrands,
+      coefficient *= computeCoefficient(g.module.ring, g.key, orangeStrands,
         s => (s startsBelow s1) && (s endsBelow s1) && (s endsAboveStart s2))
       coefficient *= g.module.rightScalarAction(computeCoefficient(r.algebra.ring, r.strands, r.algebra.orangeStrands,
         s => (s startsBelowEnd s1) && (s startsAbove s2) && (s endsBelow s2)))
-      val newGStrands = (g.label) - s1 + Strand(s1.start, s2.start)
+      val newGStrands = (g.key) - s1 + Strand(s1.start, s2.start)
       val newRStrands = r.strands - s2 + Strand(s1.end, s2.end)
-      result += coefficient *: (g.module.asInstanceOf[TypeDD[Set[Strand]]].gen(newGStrands) :<*> r.algebra.gen(newRStrands))
+      result += coefficient *: (g.module.asInstanceOf[TypeDD[Set[Strand]]].ddGen(newGStrands) :<*> r.algebra.gen(newRStrands))
     }
     // case 4
-    for (s1 <- (g.label); s2 <- r.strands if s1 endsBelowStart s2) {
+    for (s1 <- (g.key); s2 <- r.strands if s1 endsBelowStart s2) {
       var coefficient = g.module.ring.one
-      coefficient *= computeCoefficient(g.module.ring, g.label, orangeStrands,
+      coefficient *= computeCoefficient(g.module.ring, g.key, orangeStrands,
         s => (s startsAbove s1) && (s endsAbove s1) && (s endsBelowStart s2))
       coefficient *= g.module.rightScalarAction(computeCoefficient(r.algebra.ring, r.strands, r.algebra.orangeStrands,
         s => (s startsAboveEnd s1) && (s startsBelow s2) && (s endsAbove s2)))
-      val newGStrands = (g.label) - s1 + Strand(s1.start, s2.start)
+      val newGStrands = (g.key) - s1 + Strand(s1.start, s2.start)
       val newRStrands = r.strands - s2 + Strand(s1.end, s2.end)
-      result += coefficient *: (g.module.asInstanceOf[TypeDD[Set[Strand]]].gen(newGStrands) :<*> r.algebra.gen(newRStrands))
+      result += coefficient *: (g.module.asInstanceOf[TypeDD[Set[Strand]]].ddGen(newGStrands) :<*> r.algebra.gen(newRStrands))
     }
     result
   }

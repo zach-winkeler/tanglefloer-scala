@@ -1,14 +1,14 @@
 package modules
 
-import algebras.{AMinus, TensorAlgebra, Z2PolynomialRing}
 import algebras.TensorAlgebra._
-import modules.Module.{Generator, TensorElement, TensorGenerator}
-import scalax.collection.edge.LkDiEdge
-import scalax.collection.edge.Implicits._
-import scalax.collection.immutable.Graph
+import algebras.{AMinus, TensorAlgebra, Z2PolynomialRing}
 import cats.implicits._
+import modules.Module.{NodeLabel, TensorElement, TensorGenerator}
+import scalax.collection.edge.Implicits._
+import scalax.collection.edge.LkDiEdge
+import scalax.collection.immutable.Graph
 
-abstract class Module[M <: Module[M, L], L]
+abstract class Module[M <: Module[M, K], K]
   (val ring: Z2PolynomialRing,
    val leftAlgebra: AMinus,
    val rightAlgebra: AMinus,
@@ -16,7 +16,7 @@ abstract class Module[M <: Module[M, L], L]
    val rightScalarAction: Z2PolynomialRing.Morphism)
   (val leftTensorAlgebra: TensorAlgebra = new TensorAlgebra(leftAlgebra),
    val rightTensorAlgebra: TensorAlgebra = new TensorAlgebra(rightAlgebra),
-   var graph: Graph[Generator[M, L], LkDiEdge] = Graph.empty[Generator[M, L], LkDiEdge]) {
+   var graph: Graph[NodeLabel[K], LkDiEdge] = Graph.empty[NodeLabel[K], LkDiEdge]) {
 
   import Module._
 
@@ -29,29 +29,38 @@ abstract class Module[M <: Module[M, L], L]
                   leftScalarAction: Z2PolynomialRing.Morphism, rightScalarAction: Z2PolynomialRing.Morphism)
                  (leftTensorAlgebra: TensorAlgebra = new TensorAlgebra(leftAlgebra),
                   rightTensorAlgebra: TensorAlgebra = new TensorAlgebra(rightAlgebra),
-                  graph: Graph[Generator[M, L], LkDiEdge] = Graph.empty): M
+                  graph: Graph[NodeLabel[K], LkDiEdge] = Graph.empty): M
 
-  def zero: Element[M, L] = new Element(this, Map.empty)
+  def zero: Element[M, K] = new Element(this, Map.empty)
 
-  def addGenerator(g: Generator[M, L]): Unit = {
-    graph = graph + g
+  def addGenerator(label: NodeLabel[K]): Unit = {
+    graph = graph + label
   }
 
-  def gens: Set[Generator[M, L]] =
-    graph.nodes.view.map((innerNode: Graph[Generator[M, L], LkDiEdge]#NodeT) => innerNode.value).toSet
+  def gen(label: NodeLabel[K]): Generator[M, K] = {
+    assert((graph find label).nonEmpty)
+    new Generator(this, label.key, label.leftIdempotent, label.rightIdempotent)
+  }
 
-  def addStructureMap(input: TensorGenerator[M, L], output: TensorElement[M, L]): Unit = {
+  def gens: Set[Generator[M, K]] =
+    graph.nodes.view.map((innerNode: Graph[NodeLabel[K], LkDiEdge]#NodeT) => innerNode.value).toSet.map(gen)
+
+  def addStructureMap(input: TensorGenerator[M, K], output: TensorElement[M, K]): Unit = {
     assert(companion.isValidStructureMap(input, output))
     for ((g, c) <- output.terms) {
       addArrow(input, g, c)
     }
   }
 
-  def addArrow(source: TensorGenerator[M, L], target: TensorGenerator[M, L], coefficient: Z2PolynomialRing.Element): Unit = {
+  def addArrow(source: TensorGenerator[M, K], target: TensorGenerator[M, K], coefficient: Z2PolynomialRing.Element): Unit = {
     val left = companion.getLeftGenerator(source, target)
     val right = companion.getRightGenerator(source, target)
-    val s = source.getGenerator
-    val t = target.getGenerator
+    val s = source.label
+    val t = target.label
+    if (!((graph find s).nonEmpty && (graph find t).nonEmpty)) {
+      print("hi")
+    }
+    assert((graph find s).nonEmpty && (graph find t).nonEmpty)
     val oldEdge = (s ~+#> t) (EdgeLabel(left, coefficient, right))
     val oldCoefficient = graph find oldEdge match {
       case Some(et) => et.edge match {
@@ -73,10 +82,10 @@ abstract class Module[M <: Module[M, L], L]
       buildModule(ring, leftAlgebra, rightAlgebra, leftScalarAction, rightScalarAction)(
         leftTensorAlgebra, rightTensorAlgebra, comp.to(Graph))).toSeq
 
-  def canEqual(other: Any): Boolean = other.isInstanceOf[Module[M, L]]
+  def canEqual(other: Any): Boolean = other.isInstanceOf[Module[M, K]]
 
   override def equals(other: Any): Boolean = other match {
-    case that: Module[M, L] =>
+    case that: Module[M, K] =>
       (that canEqual this) &&
         ring == that.ring &&
         leftAlgebra == that.leftAlgebra &&
@@ -97,19 +106,19 @@ abstract class Module[M <: Module[M, L], L]
 }
 
 trait ModuleCompanion {
-  def getLeftGenerator[M <: Module[M, L], L](source: TensorGenerator[M, L], target: TensorGenerator[M, L]): TensorAlgebra.Generator
+  def getLeftGenerator[M <: Module[M, K], K](source: TensorGenerator[M, K], target: TensorGenerator[M, K]): TensorAlgebra.Generator
 
-  def getRightGenerator[M <: Module[M, L], L](source: TensorGenerator[M, L], target: TensorGenerator[M, L]): TensorAlgebra.Generator
+  def getRightGenerator[M <: Module[M, K], K](source: TensorGenerator[M, K], target: TensorGenerator[M, K]): TensorAlgebra.Generator
 
-  def isIdempotentAction[M <: Module[M, L], L](left: TensorAlgebra.Generator,
+  def isIdempotentAction[M <: Module[M, K], K](left: TensorAlgebra.Generator,
                                                coefficient: Z2PolynomialRing.Element,
                                                right: TensorAlgebra.Generator): Boolean
 
-  def isValidStructureMap[M <: Module[M, L], L](source: TensorGenerator[M, L], target: TensorElement[M, L]): Boolean
+  def isValidStructureMap[M <: Module[M, K], K](source: TensorGenerator[M, K], target: TensorElement[M, K]): Boolean
 }
 
 object Module {
-  def directSum[M <: Module[M, L], L](summands: Seq[Module[M, L]]): M =
+  def directSum[M <: Module[M, K], K](summands: Seq[Module[M, K]]): M =
     if (summands.isEmpty) {
       throw new RuntimeException("empty direct sum not implemented")
     } else {
@@ -118,46 +127,51 @@ object Module {
         m.leftTensorAlgebra, m.rightTensorAlgebra, summands.view.map(_.graph).fold(Graph.empty) {_.union(_)})
     }
 
-  class TensorGenerator[M <: Module[M, L], L](val module: Module[M, L], val label: L, val leftIdempotent: AMinus.Generator, val rightIdempotent: AMinus.Generator, val left: TensorAlgebra.Generator, val right: TensorAlgebra.Generator) {
-    def toElement: TensorElement[M, L] = new TensorElement(module, Map(this -> module.ring.one))
+  class TensorGenerator[M <: Module[M, K], K](val module: Module[M, K], val key: K, val leftIdempotent: AMinus.Generator, val rightIdempotent: AMinus.Generator, val left: TensorAlgebra.Generator, val right: TensorAlgebra.Generator) {
+    def label: NodeLabel[K] =
+      NodeLabel(key,
+      if (left.factors.isEmpty) leftIdempotent else left.factors.last.rightIdempotent,
+        if (right.factors.isEmpty) rightIdempotent else right.factors.head.leftIdempotent)
 
-    def getGenerator: Generator[M, L] = new Generator(module, label, leftIdempotent, rightIdempotent)
+    def toElement: TensorElement[M, K] = new TensorElement(module, Map(this -> module.ring.one))
 
-    def <*>:(g: TensorAlgebra.Generator): TensorElement[M, L] = {
+    def getGenerator: Generator[M, K] = new Generator(module, key, leftIdempotent, rightIdempotent)
+
+    def <*>:(g: TensorAlgebra.Generator): TensorElement[M, K] = {
       if (g.rightIdempotent.isEmpty) {
         this.toElement
       } else if (g.rightIdempotent.contains(this.leftIdempotent)) {
-        new TensorGenerator[M, L](module, label, g.leftIdempotent.get, this.rightIdempotent, (g <*> left).forceGen, right).toElement
+        new TensorGenerator[M, K](module, key, g.leftIdempotent.get, this.rightIdempotent, (g <*> left).forceGen, right).toElement
       } else {
         module.zero
       }
     }
 
-    def <*>:(g: AMinus.Generator): TensorElement[M, L] = {
+    def <*>:(g: AMinus.Generator): TensorElement[M, K] = {
       g.toTensorAlgebra(module.leftTensorAlgebra) <*>: this
     }
 
-    def :<*>(g: TensorAlgebra.Generator): TensorElement[M, L] = {
+    def :<*>(g: TensorAlgebra.Generator): TensorElement[M, K] = {
       if (g.leftIdempotent.isEmpty) {
         this.toElement
       } else if (g.leftIdempotent.contains(this.rightIdempotent)) {
-        new TensorGenerator[M, L](module, label, this.leftIdempotent, g.rightIdempotent.get, left, (right <*> g).forceGen).toElement
+        new TensorGenerator[M, K](module, key, this.leftIdempotent, g.rightIdempotent.get, left, (right <*> g).forceGen).toElement
       } else {
         module.zero
       }
     }
 
-    def :<*>(g: AMinus.Generator): TensorElement[M, L] = {
+    def :<*>(g: AMinus.Generator): TensorElement[M, K] = {
       this :<*> g.toTensorAlgebra(module.rightTensorAlgebra)
     }
 
-    def canEqual(other: Any): Boolean = other.isInstanceOf[TensorGenerator[M, L]]
+    def canEqual(other: Any): Boolean = other.isInstanceOf[TensorGenerator[M, K]]
 
     override def equals(other: Any): Boolean = other match {
-      case that: TensorGenerator[M, L] =>
+      case that: TensorGenerator[M, K] =>
         (that canEqual this) &&
           module == that.module &&
-          label == that.label &&
+          key == that.key &&
           leftIdempotent == that.leftIdempotent &&
           rightIdempotent == that.rightIdempotent &&
           left == that.left &&
@@ -166,70 +180,70 @@ object Module {
     }
 
     override def hashCode: Int = {
-      val state = Seq(label, leftIdempotent, rightIdempotent, left, right)
+      val state = Seq(key, leftIdempotent, rightIdempotent, left, right)
       state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
     }
 
-    override def toString: String = left.toString + label.toString + right.toString
+    override def toString: String = left.toString + key.toString + right.toString
   }
 
-  class Generator[M <: Module[M, L], L](module: Module[M, L], label: L, leftIdempotent: AMinus.Generator, rightIdempotent: AMinus.Generator)
-    extends TensorGenerator[M, L](module, label, leftIdempotent, rightIdempotent, module.leftTensorAlgebra.oneGen, module.rightTensorAlgebra.oneGen) {
-    override def toElement: Element[M, L] = new Element(module, Map(this -> module.ring.one))
+  class Generator[M <: Module[M, K], K](module: Module[M, K], key: K, leftIdempotent: AMinus.Generator, rightIdempotent: AMinus.Generator)
+    extends TensorGenerator[M, K](module, key, leftIdempotent, rightIdempotent, module.leftTensorAlgebra.oneGen, module.rightTensorAlgebra.oneGen) {
+    override def toElement: Element[M, K] = new Element(module, Map(this -> module.ring.one))
 
     override def equals(other: Any): Boolean = other match {
-      case that: Generator[M, L] => this.label == that.label
+      case that: Generator[M, K] => this.key == that.key
       case _ => false
     }
 
-    def incoming: Set[LkDiEdge[Graph[Generator[M, L], LkDiEdge]#NodeT]] = (module.graph get this).incoming.map(_.edge)
+    def incoming: Set[LkDiEdge[Graph[NodeLabel[K], LkDiEdge]#NodeT]] = (module.graph get label).incoming.map(_.edge)
 
-    def outgoing: Set[LkDiEdge[Graph[Generator[M, L], LkDiEdge]#NodeT]] = (module.graph get this).outgoing.map(_.edge)
+    def outgoing: Set[LkDiEdge[Graph[NodeLabel[K], LkDiEdge]#NodeT]] = (module.graph get label).outgoing.map(_.edge)
 
-    override def hashCode: Int = Seq(label).map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+    override def hashCode: Int = Seq(key).map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
 
-    override def toString: String = label.toString
+    override def toString: String = key.toString
   }
 
-  class TensorElement[M <: Module[M, L], L](val module: Module[M, L],
-                                            _terms: Map[_ <: TensorGenerator[M, L], Z2PolynomialRing.Element]) {
-    val terms: Map[_ <: TensorGenerator[M, L], Z2PolynomialRing.Element] = _terms.filter(_._2 != module.ring.zero)
+  class TensorElement[M <: Module[M, K], K](val module: Module[M, K],
+                                            _terms: Map[_ <: TensorGenerator[M, K], Z2PolynomialRing.Element]) {
+    val terms: Map[_ <: TensorGenerator[M, K], Z2PolynomialRing.Element] = _terms.filter(_._2 != module.ring.zero)
 
-    def +(other: TensorElement[M, L]): TensorElement[M, L] = {
+    def +(other: TensorElement[M, K]): TensorElement[M, K] = {
       assert(this.module == other.module)
       new TensorElement(this.module,
-        this.terms.asInstanceOf[Map[TensorGenerator[M, L], Z2PolynomialRing.Element]]
-          |+| other.terms.asInstanceOf[Map[TensorGenerator[M, L], Z2PolynomialRing.Element]])
+        this.terms.asInstanceOf[Map[TensorGenerator[M, K], Z2PolynomialRing.Element]]
+          |+| other.terms.asInstanceOf[Map[TensorGenerator[M, K], Z2PolynomialRing.Element]])
     }
 
-    def *:(scalar: Z2PolynomialRing.Element): TensorElement[M, L] =
+    def *:(scalar: Z2PolynomialRing.Element): TensorElement[M, K] =
       new TensorElement(module, terms.view.mapValues(scalar * _).toMap)
 
-    def <*>:(other: TensorAlgebra.Element): TensorElement[M, L] = {
-      var result: TensorElement[M, L] = module.zero
+    def <*>:(other: TensorAlgebra.Element): TensorElement[M, K] = {
+      var result: TensorElement[M, K] = module.zero
       for ((g1, c1) <- other.terms; (g2, c2) <- this.terms) {
         result += (module.leftScalarAction(c1) * c2) *: (g1 <*>: g2)
       }
       result
     }
 
-    def <*>:(other: AMinus.Element): TensorElement[M, L] = {
+    def <*>:(other: AMinus.Element): TensorElement[M, K] = {
       other.toTensorAlgebra(module.leftTensorAlgebra) <*>: this
     }
 
-    def :<*>(other: TensorAlgebra.Element): TensorElement[M, L] = {
-      var result: TensorElement[M, L] = module.zero
+    def :<*>(other: TensorAlgebra.Element): TensorElement[M, K] = {
+      var result: TensorElement[M, K] = module.zero
       for ((g1, c1) <- this.terms; (g2, c2) <- other.terms) {
         result += (c1 * module.rightScalarAction(c2)) *: (g1 :<*> g2)
       }
       result
     }
 
-    def :<*>(other: AMinus.Element): TensorElement[M, L] = {
+    def :<*>(other: AMinus.Element): TensorElement[M, K] = {
       this :<*> other.toTensorAlgebra(module.rightTensorAlgebra)
     }
 
-    def forceGen: TensorGenerator[M, L] = {
+    def forceGen: TensorGenerator[M, K] = {
       assert(terms.tail.isEmpty && (terms.head._2 == module.ring.one))
       terms.head._1
     }
@@ -240,23 +254,25 @@ object Module {
     }
   }
 
-  class Element[M <: Module[M, L], L](module: Module[M, L], _terms: Map[Generator[M, L], Z2PolynomialRing.Element])
-    extends TensorElement[M, L](module, _terms) {
-    override val terms: Map[Generator[M, L], Z2PolynomialRing.Element] = _terms.filter(_._2 != module.ring.zero)
+  class Element[M <: Module[M, K], K](module: Module[M, K], _terms: Map[Generator[M, K], Z2PolynomialRing.Element])
+    extends TensorElement[M, K](module, _terms) {
+    override val terms: Map[Generator[M, K], Z2PolynomialRing.Element] = _terms.filter(_._2 != module.ring.zero)
 
-    def +(other: Element[M, L]): Element[M, L] = {
+    def +(other: Element[M, K]): Element[M, K] = {
       assert(this.module == other.module)
       new Element(this.module, this.terms |+| other.terms)
     }
 
-    override def *:(scalar: Z2PolynomialRing.Element): Element[M, L] =
+    override def *:(scalar: Z2PolynomialRing.Element): Element[M, K] =
       new Element(module, terms.view.mapValues(scalar * _).toMap)
 
-    override def forceGen: Generator[M, L] = {
+    override def forceGen: Generator[M, K] = {
       assert(terms.tail.isEmpty && (terms.head._2 == module.ring.one))
       terms.head._1
     }
   }
+
+  case class NodeLabel[K](key: K, leftIdempotent: AMinus.Generator, rightIdempotent: AMinus.Generator)
 
   case class EdgeLabel(left: TensorAlgebra.Generator,
                        coefficient: Z2PolynomialRing.Element,

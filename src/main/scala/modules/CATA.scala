@@ -11,7 +11,7 @@ import utilities.Functions.partialBijections
 
 object CATA {
   implicit class TypeAAExtensions(module: TypeAA[Set[Strand]]) {
-    def gen(strands: Set[Strand]): Generator[TypeAA[Set[Strand]], Set[Strand]] = {
+    def aaGen(strands: Set[Strand]): Generator[TypeAA[Set[Strand]], Set[Strand]] = {
       new Generator[TypeAA[Set[Strand]],Set[Strand]](module, strands,
         module.leftAlgebra.gen(strands.sourceId), module.rightAlgebra.gen(strands.targetId))
     }
@@ -36,10 +36,10 @@ object CATA {
     ))
 
     val gens = partialBijections(etangle.middlePoints, etangle.rightPoints).map(pb =>
-      pb.map(Strand.fromTuple)).map(strands => result.gen(strands))
+      pb.map(Strand.fromTuple)).map(strands => result.aaGen(strands))
 
     for (g <- gens) {
-      result.addGenerator(g)
+      result.addGenerator(g.label)
     }
     for (g <- gens) {
       result.addStructureMap(g, m1(g, orangeStrands))
@@ -60,12 +60,12 @@ object CATA {
   def m1(g: Module.Generator[TypeAA[Set[Strand]],Set[Strand]], orangeStrands: Set[VariableStrand]):
   Element[TypeAA[Set[Strand]],Set[Strand]] = {
     var result = g.module.zero
-    for (s1 <- (g.label);
-         s2 <- (g.label) if (s1 startsBelow s2) && (s1 crosses s2)) {
-      val coefficient = computeCoefficient(g.module.ring, g.label, orangeStrands,
+    for (s1 <- (g.key);
+         s2 <- (g.key) if (s1 startsBelow s2) && (s1 crosses s2)) {
+      val coefficient = computeCoefficient(g.module.ring, g.key, orangeStrands,
         s => (s startsBetween (s1,s2)) && (s endsBetween (s2,s1)))
-      val newStrands = (g.label).uncross(s1, s2)
-      result += coefficient *: g.module.asInstanceOf[TypeAA[Set[Strand]]].gen(newStrands).toElement
+      val newStrands = (g.key).uncross(s1, s2)
+      result += coefficient *: g.module.asInstanceOf[TypeAA[Set[Strand]]].aaGen(newStrands).toElement
     }
     result.asInstanceOf[Element[TypeAA[Set[Strand]],Set[Strand]]]
   }
@@ -76,7 +76,7 @@ object CATA {
     var newHalfStrands = Set.empty[(Strand, Strand)]
     var newStrands = Set.empty[Strand]
     for (s1 <- l.strands) {
-      (g.label).find(_.start == s1.end) match {
+      (g.key).find(_.start == s1.end) match {
         case Some(s2) =>
           for ((s3, s4) <- newHalfStrands) {
             if ((s1 crosses s3) && (s2 crosses s4)) {
@@ -91,7 +91,7 @@ object CATA {
           coefficient *= g.module.ring.zero
       }
     }
-    coefficient *: g.module.asInstanceOf[TypeAA[Set[Strand]]].gen(newStrands).toElement
+    coefficient *: g.module.asInstanceOf[TypeAA[Set[Strand]]].aaGen(newStrands).toElement
   }
 
   def m2(g: Module.Generator[TypeAA[Set[Strand]],Set[Strand]], r: AMinus.Generator, orangeStrands: Set[VariableStrand]):
@@ -99,7 +99,7 @@ object CATA {
     var coefficient = g.module.ring.one
     var newHalfStrands = Set.empty[(Strand, Strand)]
     var newStrands = Set.empty[Strand]
-    for (s1 <- (g.label)) {
+    for (s1 <- (g.key)) {
       r.strands.find(_.start == s1.end) match {
         case Some(s2) =>
           for ((s3, s4) <- newHalfStrands) {
@@ -115,6 +115,6 @@ object CATA {
           coefficient *= g.module.ring.zero
       }
     }
-    coefficient *: g.module.asInstanceOf[TypeAA[Set[Strand]]].gen(newStrands).toElement
+    coefficient *: g.module.asInstanceOf[TypeAA[Set[Strand]]].aaGen(newStrands).toElement
   }
 }
