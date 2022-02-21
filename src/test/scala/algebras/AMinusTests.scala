@@ -62,6 +62,6 @@ class AMinusTests extends AnyFunSuite {
   }
 
   test("gens") {
-    assertResult(7) {A.gens.size}
+    assertResult(7) {A.gens().size}
   }
 }

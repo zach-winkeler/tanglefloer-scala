@@ -44,16 +44,13 @@ object CATA {
     for (g <- gens) {
       result.addStructureMap(g, m1(g, orangeStrands))
     }
-    for (g <- gens; l <- leftAlgebra.gens) {
-      if (l.rightIdempotent == g.leftIdempotent) {
-        result.addStructureMap((l <*>: g).forceGen, m2(l, g, orangeStrands))
-      }
+    for (g <- gens; l <- leftAlgebra.gens(rightIdempotent = Some(g.leftIdempotent))) {
+      result.addStructureMap((l <*>: g).forceGen, m2(l, g, orangeStrands))
     }
-    for (g <- gens; r <- rightAlgebra.gens) {
-      if (g.rightIdempotent == r.leftIdempotent) {
-        result.addStructureMap((g :<*> r).forceGen, m2(g, r, orangeStrands))
-      }
+    for (g <- gens; r <- rightAlgebra.gens(leftIdempotent = Some(g.rightIdempotent))) {
+      result.addStructureMap((g :<*> r).forceGen, m2(g, r, orangeStrands))
     }
+
     result
   }
 

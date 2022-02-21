@@ -46,18 +46,16 @@ object TypeAA extends ModuleCompanion {
     def asTypeAA: TypeAA[AMinus.Generator] = {
       val result = new TypeAA[AMinus.Generator](a.ring, a, a,
         Z2PolynomialRing.Morphism.identity(a.ring), Z2PolynomialRing.Morphism.identity(a.ring))()
-      for (g <- a.gens) {
+      for (g <- a.gens()) {
         result.addGenerator(NodeLabel(g, g.leftIdempotent, g.rightIdempotent))
       }
-      for (g <- a.gens) {
+      for (g <- a.gens()) {
         result.addStructureMap(g.asTypeAAGenerator(result), g.d.asTypeAAElement(result))
-        for (h <- a.gens) {
-          if (h.rightIdempotent == g.leftIdempotent) {
-            result.addStructureMap((h <*>: g.asTypeAAGenerator(result)).forceGen, (h * g).asTypeAAElement(result))
-          }
-          if (g.rightIdempotent == h.leftIdempotent) {
-            result.addStructureMap((g.asTypeAAGenerator(result) :<*> h).forceGen, (g * h).asTypeAAElement(result))
-          }
+        for (h <- a.gens(rightIdempotent = Some(g.leftIdempotent))) {
+          result.addStructureMap((h <*>: g.asTypeAAGenerator(result)).forceGen, (h * g).asTypeAAElement(result))
+        }
+        for (h <- a.gens(leftIdempotent = Some(g.rightIdempotent))) {
+          result.addStructureMap((g.asTypeAAGenerator(result) :<*> h).forceGen, (g * h).asTypeAAElement(result))
         }
       }
       result

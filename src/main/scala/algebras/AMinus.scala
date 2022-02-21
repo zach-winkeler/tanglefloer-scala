@@ -42,11 +42,35 @@ class AMinus(val signs: IndexedSeq[Set[Sign]]) {
   def gen(strands: Set[Strand]): Generator = new AMinus.Generator(this, strands)
   def elt(strands: Set[Strand]): Element = gen(strands).toElement
 
-  def gens: Set[Generator] =
-    partialBijections(
-      (0 until signs.length+1).map(_.toFloat).toSet,
-      (0 until signs.length+1).map(_.toFloat).toSet
-    ).map(s => gen(s.map(t => Strand(t._1, t._2))))
+  def gens(leftIdempotent: Option[AMinus.Generator] = None,
+           rightIdempotent: Option[AMinus.Generator] = None): Set[Generator] = {
+    (if (leftIdempotent.isEmpty) {
+      if (rightIdempotent.isEmpty) {
+        partialBijections(
+          (0 until signs.length+1).map(_.toFloat).toSet,
+          (0 until signs.length+1).map(_.toFloat).toSet
+        )
+      } else {
+        injections(
+          rightIdempotent.get.strands.map(_.start),
+          (0 until signs.length+1).map(_.toFloat).toSet
+        ).map(inj => inj.map { case (s, t) => (t, s) })
+      }
+    } else {
+      if (rightIdempotent.isEmpty) {
+        injections(
+          leftIdempotent.get.strands.map(_.end),
+          (0 until signs.length+1).map(_.toFloat).toSet
+        )
+      } else {
+        assert(leftIdempotent.get.strands.size == rightIdempotent.get.strands.size)
+        injections(
+          leftIdempotent.get.strands.map(_.end),
+          rightIdempotent.get.strands.map(_.start)
+        )
+      }
+    }).map(s => gen(s.map(t => Strand(t._1, t._2))))
+  }
 
   def canEqual(other: Any): Boolean = other.isInstanceOf[AMinus]
 
