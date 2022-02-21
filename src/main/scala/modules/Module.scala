@@ -272,7 +272,9 @@ object Module {
     }
   }
 
-  case class NodeLabel[K](key: K, leftIdempotent: AMinus.Generator, rightIdempotent: AMinus.Generator)
+  case class NodeLabel[K](key: K, leftIdempotent: AMinus.Generator, rightIdempotent: AMinus.Generator) {
+    override def toString: String = key.toString.replaceAll("Set","")
+  }
 
   case class EdgeLabel(left: TensorAlgebra.Generator,
                        coefficient: Z2PolynomialRing.Element,
