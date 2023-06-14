@@ -50,11 +50,14 @@ abstract class Reducible[M <: Module[M, K], K](base: M) {
 object Reduction {
   implicit class TypeDAReduction[K](base: TypeDA[K]) extends Reducible[TypeDA[K], K](base) {
     def isReducibleEdge(e: LkDiEdge[Graph[NodeLabel[K],LkDiEdge]#NodeT]): Boolean =
-      e match { case LkDiEdge(_, _, EdgeLabel(left, c, right)) =>
-        left.factors(0).isIdempotent && (c == c.ring.one) && right.factors.isEmpty &&
-          (e.from.outgoing.asInstanceOf[Set[LkDiEdge[Graph[NodeLabel[K],LkDiEdge]#NodeT]]] &
-            e.to.incoming.asInstanceOf[Set[LkDiEdge[Graph[NodeLabel[K],LkDiEdge]#NodeT]]]).size == 1 }
 
+
+    e match {
+      case LkDiEdge(_, _, EdgeLabel(left, c, right)) =>
+        left.factors(0).isIdempotent && (c == c.ring.one) && right.factors.isEmpty &&
+          (e.from.outgoing.asInstanceOf[Set[LkDiEdge[Graph[NodeLabel[K], LkDiEdge]#NodeT]]] &
+            e.to.incoming.asInstanceOf[Set[LkDiEdge[Graph[NodeLabel[K], LkDiEdge]#NodeT]]]).size == 1
+    }
     def reducedStructureMap(w: Generator[TypeDA[K],K],
                             wyLeft: TensorAlgebra.Generator,
                             wyC: Z2PolynomialRing.Element,
